@@ -1,12 +1,35 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { AppShell } from "../components/layout/AppShell";
-import { LogOut } from "lucide-react";
+import { CENTRAL_ZONE_BRANCHES } from "../lib/pastorAccounts";
+import { LogOut, CheckCircle2, User, Building2, Phone, Shield } from "lucide-react";
 
 export function ProfilePage() {
-  const { user, profile, signOut, loginAsDemoRole } = useAuth();
+  const { user, profile, activeRole, assignedRoles, switchRole, updateProfile, signOut } = useAuth();
   const navigate = useNavigate();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Editable fields
+  const [fullName, setFullName] = useState(profile?.full_name || "Rev. Makafui Tetteh Kumahlor");
+  const [phone, setPhone] = useState(profile?.phone || "+233 24 123 4567");
+  const [branchName, setBranchName] = useState(profile?.branches?.name || "Parresia");
+  const [gatheringCenter, setGatheringCenter] = useState(profile?.branches?.gathering_center || "LC Live Center");
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    updateProfile({
+      full_name: fullName,
+      phone: phone,
+      branch_name: branchName,
+      gathering_center: gatheringCenter,
+    });
+    setIsEditing(false);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -17,85 +40,173 @@ export function ProfilePage() {
     BRANCH_PASTOR: "Branch Pastor",
     ZONAL_HEAD: "Zonal Head",
     EXECUTIVE: "Executive Council ('Daddy')",
-  }[profile?.role] || "Member";
+  }[activeRole] || "Pastor";
 
   return (
-    <AppShell title="Profile & Settings">
+    <AppShell unitName={branchName} title="Profile & Settings">
       <div className="space-y-6 pt-2">
+        {/* Profile Card */}
         <div className="flex items-center gap-3.5 py-3 border-b border-gray-100">
-          <div className="w-11 h-11 rounded-full bg-[#1B2A6B]/5 border border-[#1B2A6B]/20 flex items-center justify-center text-[#1B2A6B] font-semibold text-sm">
-            {(profile?.full_name || user?.email || "U").charAt(0).toUpperCase()}
+          <div className="w-12 h-12 rounded-full bg-[#1B2A6B]/5 border border-[#1B2A6B]/20 flex items-center justify-center text-[#1B2A6B] font-bold text-base shrink-0">
+            {fullName.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-sm font-semibold text-gray-900 truncate">
-              {profile?.full_name || "User"}
-            </h2>
-            <p className="text-xs text-gray-400 truncate">{user?.email || "No email"}</p>
-            <span className="inline-block mt-1 text-[10px] uppercase font-semibold tracking-wider text-[#1B2A6B]">
-              {roleTitle}
-            </span>
-          </div>
-        </div>
-
-        <div className="space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-2">
-            Account Details
-          </p>
-          <div className="divide-y divide-gray-100 border-t border-b border-gray-100 text-xs">
-            <div className="flex justify-between py-2.5">
-              <span className="text-gray-500">Branch</span>
-              <span className="text-gray-900 font-medium">{profile?.branches?.name || "—"}</span>
-            </div>
-            <div className="flex justify-between py-2.5">
-              <span className="text-gray-500">Phone</span>
-              <span className="text-gray-900 font-medium">{profile?.phone || "—"}</span>
-            </div>
-            <div className="flex justify-between py-2.5">
-              <span className="text-gray-500">Role Type</span>
-              <span className="text-gray-900 font-medium">{roleTitle}</span>
+            <h2 className="text-sm font-bold text-gray-900 truncate">{fullName}</h2>
+            <p className="text-xs text-gray-400 truncate">{user?.email || "pastor@loveeconomychurch.org"}</p>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-[#1B2A6B] bg-[#1B2A6B]/5 px-2 py-0.5 rounded">
+                Active: {roleTitle}
+              </span>
             </div>
           </div>
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className="text-xs font-semibold text-[#1B2A6B] hover:underline shrink-0"
+          >
+            {isEditing ? "Cancel" : "Edit Details"}
+          </button>
         </div>
 
-        <div className="space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-            Switch Role Preview
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => { loginAsDemoRole("BRANCH_PASTOR"); navigate("/pastor"); }}
-              className={`py-1.5 px-2 text-[11px] rounded border transition-colors ${
-                profile?.role === "BRANCH_PASTOR" ? "border-[#1B2A6B] text-[#1B2A6B] font-medium bg-[#1B2A6B]/5" : "border-gray-200 text-gray-600 hover:border-gray-300"
-              }`}
-            >
-              Pastor
-            </button>
-            <button
-              onClick={() => { loginAsDemoRole("ZONAL_HEAD"); navigate("/zonal"); }}
-              className={`py-1.5 px-2 text-[11px] rounded border transition-colors ${
-                profile?.role === "ZONAL_HEAD" ? "border-[#1B2A6B] text-[#1B2A6B] font-medium bg-[#1B2A6B]/5" : "border-gray-200 text-gray-600 hover:border-gray-300"
-              }`}
-            >
-              Zonal Head
-            </button>
-            <button
-              onClick={() => { loginAsDemoRole("EXECUTIVE"); navigate("/executive"); }}
-              className={`py-1.5 px-2 text-[11px] rounded border transition-colors ${
-                profile?.role === "EXECUTIVE" ? "border-[#1B2A6B] text-[#1B2A6B] font-medium bg-[#1B2A6B]/5" : "border-gray-200 text-gray-600 hover:border-gray-300"
-              }`}
-            >
-              Executive
-            </button>
+        {saveSuccess && (
+          <div className="p-2.5 bg-emerald-50 border border-emerald-100 rounded text-xs text-emerald-800 flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Profile details updated successfully!</span>
           </div>
-        </div>
+        )}
 
-        <div className="pt-4">
+        {/* Edit Form or Read View */}
+        {isEditing ? (
+          <form onSubmit={handleSave} className="space-y-4 border border-gray-100 rounded-lg p-4 bg-gray-50/50">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+              Edit Pastoral Information
+            </p>
+
+            <div>
+              <label className="block text-[11px] text-gray-500 mb-1">Full Name</label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs text-gray-900 outline-none focus:border-[#1B2A6B]"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] text-gray-500 mb-1">Assigned Branch (Central Zone)</label>
+              <select
+                value={branchName}
+                onChange={(e) => setBranchName(e.target.value)}
+                className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs text-gray-900 outline-none focus:border-[#1B2A6B]"
+              >
+                {CENTRAL_ZONE_BRANCHES.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] text-gray-500 mb-1">Gathering Center</label>
+              <input
+                type="text"
+                value={gatheringCenter}
+                onChange={(e) => setGatheringCenter(e.target.value)}
+                placeholder="e.g. LC Live Center"
+                className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs text-gray-900 outline-none focus:border-[#1B2A6B]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] text-gray-500 mb-1">Phone Number</label>
+              <input
+                type="text"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs text-gray-900 outline-none focus:border-[#1B2A6B]"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-[#1B2A6B] text-white text-xs font-semibold py-2 rounded hover:bg-[#152152] transition-colors"
+            >
+              Save Profile Changes
+            </button>
+          </form>
+        ) : (
+          <div className="space-y-1">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-2">
+              Ministry Assignments
+            </p>
+            <div className="divide-y divide-gray-100 border-t border-b border-gray-100 text-xs">
+              <div className="flex justify-between py-2.5">
+                <span className="text-gray-500">Branch</span>
+                <span className="text-gray-900 font-semibold">{branchName}</span>
+              </div>
+              <div className="flex justify-between py-2.5">
+                <span className="text-gray-500">Zone</span>
+                <span className="text-gray-900 font-semibold">Central Zone</span>
+              </div>
+              <div className="flex justify-between py-2.5">
+                <span className="text-gray-500">Gathering Center</span>
+                <span className="text-gray-900 font-medium">{gatheringCenter}</span>
+              </div>
+              <div className="flex justify-between py-2.5">
+                <span className="text-gray-500">Phone</span>
+                <span className="text-gray-900 font-medium">{phone}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Role Switcher in Profile */}
+        {assignedRoles && assignedRoles.length > 1 && (
+          <div className="space-y-2 pt-2">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+              Active View Portals
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {assignedRoles.map((r) => {
+                const isActive = activeRole === r;
+                const label =
+                  r === "BRANCH_PASTOR"
+                    ? "Branch View"
+                    : r === "ZONAL_HEAD"
+                    ? "Zonal View"
+                    : "Council View";
+                return (
+                  <button
+                    key={r}
+                    onClick={() => {
+                      switchRole(r);
+                      if (r === "BRANCH_PASTOR") navigate("/pastor");
+                      else if (r === "ZONAL_HEAD") navigate("/zonal");
+                      else if (r === "EXECUTIVE") navigate("/executive");
+                    }}
+                    className={`py-2 px-2 text-[11px] rounded border transition-colors ${
+                      isActive
+                        ? "border-[#1B2A6B] text-[#1B2A6B] font-bold bg-[#1B2A6B]/5"
+                        : "border-gray-200 text-gray-600 hover:border-gray-300"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Sign Out */}
+        <div className="pt-4 border-t border-gray-100">
           <button
             onClick={handleSignOut}
             className="w-full flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-medium text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors"
           >
             <LogOut className="w-3.5 h-3.5 stroke-[1.75]" />
-            Sign Out
+            Sign Out to Account Selection
           </button>
         </div>
       </div>

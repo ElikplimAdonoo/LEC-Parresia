@@ -3,23 +3,32 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
 import { useAuth } from "../contexts/AuthContext";
 import { getStoredReports } from "../lib/reportStore";
-import { Plus, FileText, CheckCircle2 } from "lucide-react";
+import { Plus, FileText, CheckCircle2, ArrowRight } from "lucide-react";
 
 export function PastorDashboard() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
 
-  // Pastor Name & Branch Name
+  // Time-based greeting helper
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "GOOD MORNING";
+    if (hour < 17) return "GOOD AFTERNOON";
+    return "GOOD EVENING";
+  };
+
   const pastorName = profile?.full_name || "Rev. Makafui Tetteh Kumahlor";
   const branchName = profile?.branches?.name || "Parresia";
 
   useEffect(() => {
-    // Load existing reports
     const all = getStoredReports();
-    // Filter reports for this branch or all if branch matches
-    setReports(all);
-  }, []);
+    // Filter reports for this branch or show all if newly submitted
+    const branchReports = all.filter(
+      (r) => !r.branch_name || r.branch_name.toLowerCase() === branchName.toLowerCase()
+    );
+    setReports(branchReports.length > 0 ? branchReports : all);
+  }, [branchName]);
 
   const totalReports = reports.length;
   const latestReport = reports[0];
@@ -27,31 +36,36 @@ export function PastorDashboard() {
   const lastStewardship = latestReport ? latestReport.total_stewardship : "—";
 
   return (
-    <AppShell
-      brandTitle={pastorName}
-      title={branchName}
-      subtitle="Branch Pastor Portal"
-    >
+    <AppShell unitName={branchName}>
       <div className="space-y-6 pt-2">
-        {/* Welcome & Submit CTA */}
-        <div className="flex justify-between items-start pb-3 border-b border-gray-100">
-          <div>
-            <p className="text-xs text-gray-400">Pastor in Charge</p>
-            <h2 className="text-sm font-semibold text-gray-900">{pastorName}</h2>
-            <p className="text-[11px] text-[#1B2A6B] font-medium mt-0.5">
-              {branchName} &bull; Central Zone
+        {/* Mockup-style Greeting Header:
+            GOOD AFTERNOON
+            [Pastor Full Name]
+            Here is what is happening in your Church / Branch
+        */}
+        <div className="flex justify-between items-start pb-4 border-b border-gray-100">
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold tracking-[0.16em] text-gray-400 uppercase">
+              {getGreeting()}
+            </p>
+            <h2 className="text-xl font-extrabold text-gray-900 tracking-tight leading-tight">
+              {pastorName}
+            </h2>
+            <p className="text-xs text-gray-500 font-normal">
+              Here is what is happening in your Branch ({branchName})
             </p>
           </div>
+
           <button
             onClick={() => navigate("/submit")}
-            className="flex items-center gap-1 bg-[#1B2A6B] text-white text-xs font-medium px-3 py-1.5 rounded hover:bg-[#152152] transition-colors"
+            className="flex items-center gap-1 bg-[#1B2A6B] text-white text-xs font-semibold px-3 py-1.5 rounded hover:bg-[#152152] transition-colors shrink-0 shadow-xs"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2]" />
             Submit
           </button>
         </div>
 
-        {/* Dynamic Minimal Stats */}
+        {/* Quick Minimal Stats */}
         <div className="grid grid-cols-3 gap-3 text-center">
           <div className="p-3 border border-gray-100 rounded">
             <p className="text-[10px] uppercase font-semibold text-gray-400">Submissions</p>
@@ -59,34 +73,34 @@ export function PastorDashboard() {
           </div>
           <div className="p-3 border border-gray-100 rounded">
             <p className="text-[10px] uppercase font-semibold text-gray-400">Last Attendance</p>
-            <p className="text-base font-bold text-gray-900 mt-0.5">{lastAttendance}</p>
+            <p className="text-base font-bold text-[#1B2A6B] mt-0.5">{lastAttendance}</p>
           </div>
           <div className="p-3 border border-gray-100 rounded">
             <p className="text-[10px] uppercase font-semibold text-gray-400">Status</p>
             <span className="inline-block text-[11px] font-medium text-emerald-600 mt-0.5">
-              {totalReports > 0 ? "Submitted" : "Pending"}
+              {totalReports > 0 ? "Active" : "Pending"}
             </span>
           </div>
         </div>
 
-        {/* Submissions List */}
+        {/* Submissions Feed */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-              Submitted Reports
+              Branch Activity Feed
             </p>
-            <span className="text-[11px] text-gray-400">Transmitted to Zonal Head & Council</span>
+            <span className="text-[11px] text-gray-400">Transmitted to Zone & Council</span>
           </div>
 
           {reports.length === 0 ? (
             <div className="border border-gray-100 rounded p-6 text-center text-gray-400 text-xs space-y-1.5">
               <FileText className="w-6 h-6 stroke-[1.25] mx-auto text-gray-300" />
-              <p>No reports submitted yet for this cycle.</p>
+              <p>No reports submitted yet for {branchName}.</p>
               <button
                 onClick={() => navigate("/submit")}
                 className="text-[11px] text-[#1B2A6B] font-medium hover:underline block mx-auto mt-1"
               >
-                + Create first report
+                + Create service report
               </button>
             </div>
           ) : (
@@ -103,7 +117,7 @@ export function PastorDashboard() {
                       </span>
                     </div>
                     <p className="text-[11px] text-gray-400">
-                      Date: {rep.service_date || "N/A"} &bull; {rep.sermon_title ? `\"${rep.sermon_title}\"` : "No title"}
+                      Date: {rep.service_date || "N/A"} &bull; {rep.sermon_title ? `"${rep.sermon_title}"` : "No title"}
                     </p>
                   </div>
                   <div className="text-right">

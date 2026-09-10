@@ -2,11 +2,21 @@ import React, { useEffect, useState } from "react";
 import { AppShell } from "../components/layout/AppShell";
 import { useAuth } from "../contexts/AuthContext";
 import { getStoredReports } from "../lib/reportStore";
-import { Building2, CheckCircle2, ChevronRight } from "lucide-react";
+import { Building2, CheckCircle2 } from "lucide-react";
 
 export function ZonalDashboard() {
   const { profile } = useAuth();
   const [reports, setReports] = useState([]);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "GOOD MORNING";
+    if (hour < 17) return "GOOD AFTERNOON";
+    return "GOOD EVENING";
+  };
+
+  const zoneLeader = profile?.full_name || "Rev. Makafui Tetteh Kumahlor";
+  const zoneName = profile?.zones?.name || "Central Zone";
 
   useEffect(() => {
     setReports(getStoredReports());
@@ -17,20 +27,18 @@ export function ZonalDashboard() {
   const totalFinance = reports.reduce((acc, curr) => acc + (parseFloat(curr.total_stewardship) || 0), 0);
 
   return (
-    <AppShell
-      brandTitle="Central Zone Leadership"
-      title="Zone Overview"
-      subtitle="Zonal Head Portal"
-    >
+    <AppShell unitName={zoneName}>
       <div className="space-y-6 pt-2">
-        {/* Zonal Header */}
-        <div className="pb-3 border-b border-gray-100">
-          <p className="text-xs text-gray-400">Zonal Head</p>
-          <h2 className="text-sm font-semibold text-gray-900">
-            {profile?.full_name || "Rev. Emmanuel Quaye"}
+        {/* Mockup-style Greeting Header for Zone */}
+        <div className="pb-4 border-b border-gray-100 space-y-1">
+          <p className="text-[10px] font-bold tracking-[0.16em] text-gray-400 uppercase">
+            {getGreeting()}
+          </p>
+          <h2 className="text-xl font-extrabold text-gray-900 tracking-tight leading-tight">
+            {zoneLeader}
           </h2>
-          <p className="text-[11px] text-[#1B2A6B] font-medium mt-0.5">
-            Central Zone &bull; Overseeing Parresia & District Branches
+          <p className="text-xs text-gray-500 font-normal">
+            Here is what is happening in your Zone ({zoneName})
           </p>
         </div>
 
@@ -41,7 +49,7 @@ export function ZonalDashboard() {
             <p className="text-base font-bold text-gray-900 mt-0.5">{totalReports}</p>
           </div>
           <div className="p-3 border border-gray-100 rounded">
-            <p className="text-[10px] uppercase font-semibold text-gray-400">Zonal Attendance</p>
+            <p className="text-[10px] uppercase font-semibold text-gray-400">Zone Attendance</p>
             <p className="text-base font-bold text-[#1B2A6B] mt-0.5">{totalAttendance}</p>
           </div>
           <div className="p-3 border border-gray-100 rounded">
@@ -65,7 +73,7 @@ export function ZonalDashboard() {
             <div className="border border-gray-100 rounded p-6 text-center text-gray-400 text-xs space-y-1.5">
               <Building2 className="w-6 h-6 stroke-[1.25] mx-auto text-gray-300" />
               <p>No branch reports received yet for Central Zone.</p>
-              <p className="text-[11px] text-gray-400">Reports submitted by Branch Pastors will immediately reflect here.</p>
+              <p className="text-[11px] text-gray-400">Submissions from Parresia and other branches reflect here instantly.</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100 border border-gray-100 rounded">

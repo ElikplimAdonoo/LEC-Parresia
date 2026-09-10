@@ -8,6 +8,15 @@ export function ExecutiveDashboard() {
   const { profile } = useAuth();
   const [reports, setReports] = useState([]);
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "GOOD MORNING";
+    if (hour < 17) return "GOOD AFTERNOON";
+    return "GOOD EVENING";
+  };
+
+  const councilMember = profile?.full_name || "Bishop / Executive Council ('Daddy')";
+
   useEffect(() => {
     setReports(getStoredReports());
   }, []);
@@ -16,28 +25,25 @@ export function ExecutiveDashboard() {
   const totalAttendance = reports.reduce((acc, curr) => acc + (parseInt(curr.total_attendance) || 0), 0);
   const totalFinance = reports.reduce((acc, curr) => acc + (parseFloat(curr.total_stewardship) || 0), 0);
   const totalConverts = reports.reduce((acc, curr) => acc + (parseInt(curr.new_converts) || 0), 0);
-  const totalFirstTimers = reports.reduce((acc, curr) => acc + (parseInt(curr.first_timers) || 0), 0);
 
   return (
-    <AppShell
-      brandTitle="Executive Council ('Daddy')"
-      title="Worldwide Overview"
-      subtitle="Executive Leadership Console"
-    >
+    <AppShell unitName="Executive Council">
       <div className="space-y-6 pt-2">
-        {/* Council Banner */}
-        <div className="pb-3 border-b border-gray-100 flex justify-between items-start">
-          <div>
-            <p className="text-xs text-gray-400">Presiding Bishop & Council</p>
-            <h2 className="text-sm font-semibold text-gray-900">
-              Executive Pastoral Council
+        {/* Mockup-style Greeting Header for Council */}
+        <div className="pb-4 border-b border-gray-100 flex justify-between items-start">
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold tracking-[0.16em] text-gray-400 uppercase">
+              {getGreeting()}
+            </p>
+            <h2 className="text-xl font-extrabold text-gray-900 tracking-tight leading-tight">
+              {councilMember}
             </h2>
-            <p className="text-[11px] text-[#1B2A6B] font-medium mt-0.5">
-              Love Economy Church Worldwide
+            <p className="text-xs text-gray-500 font-normal">
+              Here is what is happening across the Church Worldwide
             </p>
           </div>
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-            <ShieldCheck className="w-3 h-3" /> Live Feed
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 shrink-0">
+            <ShieldCheck className="w-3 h-3" /> Live Council Feed
           </span>
         </div>
 
@@ -69,20 +75,20 @@ export function ExecutiveDashboard() {
           </div>
         </div>
 
-        {/* All Submissions Flowing Directly into Council */}
+        {/* Live Submissions Feed */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
               Live Submissions from Branches & Zones
             </p>
-            <span className="text-[11px] text-gray-400">Reflecting Central Zone & Parresia</span>
+            <span className="text-[11px] text-gray-400">Central Zone & Parresia Feed</span>
           </div>
 
           {reports.length === 0 ? (
             <div className="border border-gray-100 rounded p-6 text-center text-gray-400 text-xs space-y-1.5">
               <BarChart3 className="w-6 h-6 stroke-[1.25] mx-auto text-gray-300" />
               <p>No reports transmitted yet from the field.</p>
-              <p className="text-[11px] text-gray-400">Submissions from Branch Pastors and Zonal Heads will appear here instantly.</p>
+              <p className="text-[11px] text-gray-400">Submissions from Parresia and other branches will appear here instantly.</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-100 border border-gray-100 rounded">
@@ -102,7 +108,7 @@ export function ExecutiveDashboard() {
                     </p>
                     {rep.sermon_title && (
                       <p className="text-[10px] text-gray-500 italic">
-                        \"{rep.sermon_title}\" {rep.preacher ? `by ${rep.preacher}` : ""}
+                        "{rep.sermon_title}" {rep.preacher ? `by ${rep.preacher}` : ""}
                       </p>
                     )}
                   </div>
