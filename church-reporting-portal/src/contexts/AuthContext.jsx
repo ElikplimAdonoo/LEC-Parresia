@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext({});
@@ -6,15 +6,15 @@ const AuthContext = createContext({});
 const DEMO_PROFILES = {
   BRANCH_PASTOR: {
     id: "demo-pastor-id",
-    full_name: "Pastor Paul Mensah",
+    full_name: "Rev. Makafui Tetteh Kumahlor",
     phone: "+233 24 123 4567",
     role: "BRANCH_PASTOR",
     approved: true,
     branches: {
       id: "demo-branch-1",
-      name: "Accra Central Mega Branch",
-      gathering_center: "Main Sanctuary (LC Live)",
-      zones: { id: "demo-zone-1", name: "Zone 1 - Greater Accra" },
+      name: "Parresia",
+      gathering_center: "LC Live Center",
+      zones: { id: "demo-zone-1", name: "Central Zone" },
     },
   },
   ZONAL_HEAD: {
@@ -23,7 +23,7 @@ const DEMO_PROFILES = {
     phone: "+233 20 987 6543",
     role: "ZONAL_HEAD",
     approved: true,
-    zones: { id: "demo-zone-1", name: "Zone 1 - Greater Accra" },
+    zones: { id: "demo-zone-1", name: "Central Zone" },
   },
   EXECUTIVE: {
     id: "demo-exec-id",

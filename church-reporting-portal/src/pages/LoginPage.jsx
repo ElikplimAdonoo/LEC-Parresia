@@ -27,16 +27,19 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col justify-between px-6 py-10 text-gray-900">
       <div className="max-w-xs mx-auto w-full my-auto text-center space-y-6">
+        {/* Church Logo */}
         <div>
           <img
             src="/logo.jpg"
             alt="LOVE ECONOMY CHURCH"
-            className="w-36 h-auto mx-auto object-contain mb-3"
+            className="w-40 h-auto mx-auto object-contain mb-4"
           />
-          <h1 className="text-xs font-bold tracking-[0.2em] text-[#1B2A6B] uppercase leading-relaxed">
-            LOVE ECONOMY CHURCH
+          <h1 className="text-xs font-bold tracking-[0.18em] text-[#1B2A6B] uppercase leading-relaxed">
+            PASTORS' REPORTING PORTAL
           </h1>
-          <p className="text-xs text-gray-400 mt-0.5">Pastoral Reporting System</p>
+          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+            The central platform for Love Economy Church pastors to submit and track weekly service attendance, financial stewardship, and ministry growth.
+          </p>
         </div>
 
         {error && (
@@ -45,11 +48,39 @@ export function LoginPage() {
           </div>
         )}
 
-        <div className="space-y-3 pt-2">
+        {/* Portal Access Buttons FIRST */}
+        <div className="pt-2">
+          <p className="text-[10px] uppercase font-semibold tracking-wider text-gray-400 mb-3">
+            Select Portal Access
+          </p>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => handleRoleSelect("BRANCH_PASTOR", "/pastor")}
+              className="w-full text-xs text-gray-700 font-medium py-2.5 px-3 border border-gray-200 rounded hover:border-[#1B2A6B] hover:text-[#1B2A6B] transition-colors"
+            >
+              Branch Pastor Portal
+            </button>
+            <button
+              onClick={() => handleRoleSelect("ZONAL_HEAD", "/zonal")}
+              className="w-full text-xs text-gray-700 font-medium py-2.5 px-3 border border-gray-200 rounded hover:border-[#1B2A6B] hover:text-[#1B2A6B] transition-colors"
+            >
+              Zonal Head Portal
+            </button>
+            <button
+              onClick={() => handleRoleSelect("EXECUTIVE", "/executive")}
+              className="w-full text-xs text-gray-700 font-medium py-2.5 px-3 border border-gray-200 rounded hover:border-[#1B2A6B] hover:text-[#1B2A6B] transition-colors"
+            >
+              Executive Council Portal
+            </button>
+          </div>
+        </div>
+
+        {/* Sign in with Google as LAST option */}
+        <div className="pt-4 border-t border-gray-100">
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2.5 py-2 px-4 border border-gray-200 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2.5 py-2 px-4 border border-gray-200 rounded text-xs font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
               <path
@@ -71,32 +102,6 @@ export function LoginPage() {
             </svg>
             {loading ? "Connecting..." : "Sign in with Google"}
           </button>
-        </div>
-
-        <div className="pt-6 border-t border-gray-100">
-          <p className="text-[10px] uppercase font-semibold tracking-wider text-gray-400 mb-2.5">
-            Instant Preview Access
-          </p>
-          <div className="flex flex-col gap-1.5">
-            <button
-              onClick={() => handleRoleSelect("BRANCH_PASTOR", "/pastor")}
-              className="text-xs text-gray-600 hover:text-[#1B2A6B] py-1 border border-gray-100 rounded hover:border-gray-200 transition-colors"
-            >
-              Branch Pastor Portal
-            </button>
-            <button
-              onClick={() => handleRoleSelect("ZONAL_HEAD", "/zonal")}
-              className="text-xs text-gray-600 hover:text-[#1B2A6B] py-1 border border-gray-100 rounded hover:border-gray-200 transition-colors"
-            >
-              Zonal Head Portal
-            </button>
-            <button
-              onClick={() => handleRoleSelect("EXECUTIVE", "/executive")}
-              className="text-xs text-gray-600 hover:text-[#1B2A6B] py-1 border border-gray-100 rounded hover:border-gray-200 transition-colors"
-            >
-              Executive Council Portal
-            </button>
-          </div>
         </div>
       </div>
 

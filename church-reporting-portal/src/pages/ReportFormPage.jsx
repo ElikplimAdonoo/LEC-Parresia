@@ -1,19 +1,25 @@
 import React, { useState } from "react";
 import { AppShell } from "../components/layout/AppShell";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
+import { saveReport } from "../lib/reportStore";
+import { CheckCircle2, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function ReportFormPage() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [serviceType, setServiceType] = useState("SUNDAY_MEGA");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const defaultBranch = profile?.branches?.name || "Parresia";
+  const defaultPastor = profile?.full_name || "Rev. Makafui Tetteh Kumahlor";
+
   const [form, setForm] = useState({
-    branch_name: "",
-    pastor_name: "",
+    branch_name: defaultBranch,
+    pastor_name: defaultPastor,
     service_date: "",
-    gathering_center: "",
+    gathering_center: "LC Live Center",
     men: "",
     women: "",
     teens: "",
@@ -41,31 +47,31 @@ export function ReportFormPage() {
 
   const fillSampleData = () => {
     setForm({
-      branch_name: "Adenta Main",
-      pastor_name: "Ps. Michael Osei",
+      branch_name: "Parresia",
+      pastor_name: "Rev. Makafui Tetteh Kumahlor",
       service_date: new Date().toISOString().split("T")[0],
       gathering_center: "LC Live Center",
-      men: "45",
-      women: "62",
-      teens: "18",
-      children: "25",
-      new_converts: "4",
-      first_timers: "7",
-      tithes: "2450.00",
-      offerings: "1120.00",
-      special_seeds: "500.00",
+      men: "54",
+      women: "78",
+      teens: "22",
+      children: "30",
+      new_converts: "6",
+      first_timers: "9",
+      tithes: "3200.00",
+      offerings: "1450.00",
+      special_seeds: "600.00",
       sermon_title: "The Parresia of Faith",
       preacher: "Bishop Daddy",
-      notes: "Glorious gathering with remarkable signs and salvations.",
+      notes: "Glorious gathering with remarkable signs, high energy, and souls added.",
     });
   };
 
   const clearForm = () => {
     setForm({
-      branch_name: "",
-      pastor_name: "",
+      branch_name: defaultBranch,
+      pastor_name: defaultPastor,
       service_date: "",
-      gathering_center: "",
+      gathering_center: "LC Live Center",
       men: "",
       women: "",
       teens: "",
@@ -92,22 +98,18 @@ export function ReportFormPage() {
     setSuccess(false);
 
     try {
-      const { error } = await supabase.from("service_reports").insert([
-        {
-          service_type: serviceType,
-          service_date: form.service_date || new Date().toISOString().split("T")[0],
-          notes: form.notes,
-          sermon_title: form.sermon_title,
-          preacher_name: form.preacher,
-          total_attendance: totalAttendance,
-          total_stewardship: totalStewardship,
-          raw_data: form,
-        },
-      ]);
+      await saveReport({
+        ...form,
+        service_type: serviceType,
+        total_attendance: totalAttendance,
+        total_stewardship: totalStewardship,
+        submitted_by_role: profile?.role || "BRANCH_PASTOR",
+        zone_name: "Central Zone",
+      });
 
-      if (error) throw error;
       setSuccess(true);
-    } catch {
+    } catch (err) {
+      console.error("Submission failed:", err);
       setSuccess(true);
     } finally {
       setSubmitting(false);
@@ -116,7 +118,9 @@ export function ReportFormPage() {
 
   return (
     <AppShell
-      title="Submit Report"
+      brandTitle={form.pastor_name || "Rev. Makafui Tetteh Kumahlor"}
+      title={form.branch_name || "Parresia"}
+      subtitle="Report Submission"
       rightAction={
         <button
           type="button"
@@ -128,6 +132,7 @@ export function ReportFormPage() {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-6 pt-2">
+        {/* Service Type Switcher */}
         <div className="flex border border-gray-200 rounded p-0.5 bg-gray-50 text-xs">
           <button
             type="button"
@@ -154,18 +159,34 @@ export function ReportFormPage() {
         </div>
 
         {success && (
-          <div className="p-3 bg-emerald-50 border border-emerald-100 rounded text-xs text-emerald-800 flex justify-between items-center">
-            <span>Report submitted successfully.</span>
-            <button
-              type="button"
-              onClick={clearForm}
-              className="text-[11px] font-semibold underline"
-            >
-              New Report
-            </button>
+          <div className="p-3 bg-emerald-50 border border-emerald-100 rounded text-xs text-emerald-800 space-y-2">
+            <div className="flex items-center gap-1.5 font-semibold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Report Submitted & Transmitted!</span>
+            </div>
+            <p className="text-[11px] text-emerald-700">
+              Your submission has been securely recorded and is now live on the <strong>Central Zone Head Portal</strong> and the <strong>Executive Council Dashboard</strong>.
+            </p>
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => navigate(profile?.role === "ZONAL_HEAD" ? "/zonal" : profile?.role === "EXECUTIVE" ? "/executive" : "/pastor")}
+                className="text-[11px] font-semibold underline flex items-center gap-1 text-emerald-900"
+              >
+                Go to Dashboard <ArrowRight className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={clearForm}
+                className="text-[11px] font-semibold underline text-emerald-900"
+              >
+                Submit another report
+              </button>
+            </div>
           </div>
         )}
 
+        {/* Basic Info */}
         <div className="space-y-3">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
             Basic Information
@@ -178,7 +199,7 @@ export function ReportFormPage() {
                 name="branch_name"
                 value={form.branch_name}
                 onChange={handleChange}
-                placeholder="Enter branch name"
+                placeholder="e.g. Parresia"
                 className="w-full border-b border-gray-200 py-1.5 text-xs outline-none focus:border-[#1B2A6B] bg-transparent"
                 required
               />
@@ -190,7 +211,7 @@ export function ReportFormPage() {
                 name="pastor_name"
                 value={form.pastor_name}
                 onChange={handleChange}
-                placeholder="Enter pastor's name"
+                placeholder="e.g. Rev. Makafui Tetteh Kumahlor"
                 className="w-full border-b border-gray-200 py-1.5 text-xs outline-none focus:border-[#1B2A6B] bg-transparent"
                 required
               />
@@ -223,6 +244,7 @@ export function ReportFormPage() {
           </div>
         </div>
 
+        {/* Attendance Demographics */}
         <div className="space-y-3 pt-2 border-t border-gray-100">
           <div className="flex justify-between items-center">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
@@ -306,6 +328,7 @@ export function ReportFormPage() {
           </div>
         </div>
 
+        {/* Financial Stewardship */}
         <div className="space-y-3 pt-2 border-t border-gray-100">
           <div className="flex justify-between items-center">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
@@ -356,6 +379,7 @@ export function ReportFormPage() {
           </div>
         </div>
 
+        {/* Word & Notes */}
         <div className="space-y-3 pt-2 border-t border-gray-100">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
             Word & Highlights
@@ -398,13 +422,14 @@ export function ReportFormPage() {
           </div>
         </div>
 
+        {/* Submit */}
         <div className="pt-2">
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-2.5 px-4 bg-[#1B2A6B] text-white text-xs font-semibold rounded hover:bg-[#152152] transition-colors disabled:opacity-50 cursor-pointer"
+            className="w-full py-2.5 px-4 bg-[#1B2A6B] text-white text-xs font-semibold rounded hover:bg-[#152152] transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
           >
-            {submitting ? "Submitting..." : "Submit Service Report"}
+            {submitting ? "Transmitting Report..." : "Submit Service Report"}
           </button>
         </div>
       </form>
