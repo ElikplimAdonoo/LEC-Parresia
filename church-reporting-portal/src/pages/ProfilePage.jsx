@@ -58,7 +58,7 @@ export function ProfilePage() {
             <div>
               <p className="font-bold">Welcome to {branchName} Portal!</p>
               <p className="text-[11px] text-amber-700 mt-0.5">
-                This branch is currently unassigned. Please input your full name, contact phone, and gathering center below to register as the Branch Pastor.
+                This branch is currently unassigned. Please enter your full name, contact phone, and gathering center below to register as the Branch Pastor.
               </p>
             </div>
           </div>
@@ -137,13 +137,13 @@ export function ProfilePage() {
 
             <div>
               <label className="block text-[11px] text-gray-700 font-medium mb-1">
-                Gathering Center / Sanctuary Name
+                Gathering Center Name
               </label>
               <input
                 type="text"
                 value={gatheringCenter}
                 onChange={(e) => setGatheringCenter(e.target.value)}
-                placeholder="e.g. LC Live Center / Community Hall"
+                placeholder="Enter the name of your gathering center"
                 className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs text-gray-900 outline-none focus:border-[#1B2A6B]"
               />
             </div>

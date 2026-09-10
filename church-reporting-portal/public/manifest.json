@@ -1,0 +1,17 @@
+{
+  "short_name": "CRP",
+  "name": "CRP - Church Reporting Portal",
+  "description": "Love Economy Church Pastoral Reporting Platform",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "type": "image/jpeg",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#FFFFFF",
+  "theme_color": "#1B2A6B",
+  "display": "standalone",
+  "orientation": "portrait"
+}
