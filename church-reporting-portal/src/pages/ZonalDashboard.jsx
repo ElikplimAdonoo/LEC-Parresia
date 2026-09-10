@@ -2,37 +2,36 @@ import React, { useEffect, useState } from "react";
 import { AppShell } from "../components/layout/AppShell";
 import { useAuth } from "../contexts/AuthContext";
 import { getStoredReports } from "../lib/reportStore";
+import { getAccraGreeting } from "../lib/timeGreeting";
 import { Building2, CheckCircle2 } from "lucide-react";
 
 export function ZonalDashboard() {
   const { profile } = useAuth();
   const [reports, setReports] = useState([]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "GOOD MORNING";
-    if (hour < 17) return "GOOD AFTERNOON";
-    return "GOOD EVENING";
-  };
-
   const zoneLeader = profile?.full_name || "Rev. Makafui Tetteh Kumahlor";
   const zoneName = profile?.zones?.name || "Central Zone";
 
   useEffect(() => {
-    setReports(getStoredReports());
+    let isMounted = true;
+    getStoredReports().then((data) => {
+      if (isMounted) setReports(data);
+    });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const totalReports = reports.length;
   const totalAttendance = reports.reduce((acc, curr) => acc + (parseInt(curr.total_attendance) || 0), 0);
-  const totalFinance = reports.reduce((acc, curr) => acc + (parseFloat(curr.total_stewardship) || 0), 0);
 
   return (
     <AppShell unitName={zoneName}>
       <div className="space-y-6 pt-2">
-        {/* Mockup-style Greeting Header for Zone */}
+        {/* Mockup-style Greeting Header */}
         <div className="pb-4 border-b border-gray-100 space-y-1">
           <p className="text-[10px] font-bold tracking-[0.16em] text-gray-400 uppercase">
-            {getGreeting()}
+            {getAccraGreeting()}
           </p>
           <h2 className="text-xl font-extrabold text-gray-900 tracking-tight leading-tight">
             {zoneLeader}

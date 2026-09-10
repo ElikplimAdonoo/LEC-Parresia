@@ -1,5 +1,5 @@
 // Multi-account registry for Love Economy Church
-// Central Zone branch catalog and pastoral profile management
+// Central Zone branch catalog, credentials, and pastoral profile management
 
 export const CENTRAL_ZONE_BRANCHES = [
   "Parresia",
@@ -25,6 +25,7 @@ export const INITIAL_PASTORS = [
     gathering_center: "LC Live Center",
     assigned_roles: ["BRANCH_PASTOR", "ZONAL_HEAD", "EXECUTIVE"],
     default_role: "BRANCH_PASTOR",
+    password: "1234", // Simple default password
     avatar: "",
   },
   {
@@ -37,6 +38,7 @@ export const INITIAL_PASTORS = [
     gathering_center: "Adenta Sanctuary",
     assigned_roles: ["BRANCH_PASTOR"],
     default_role: "BRANCH_PASTOR",
+    password: "1234",
     avatar: "",
   },
   {
@@ -49,6 +51,7 @@ export const INITIAL_PASTORS = [
     gathering_center: "Central Arena",
     assigned_roles: ["BRANCH_PASTOR", "ZONAL_HEAD"],
     default_role: "ZONAL_HEAD",
+    password: "1234",
     avatar: "",
   },
   {
@@ -61,11 +64,12 @@ export const INITIAL_PASTORS = [
     gathering_center: "Apostolic Council",
     assigned_roles: ["EXECUTIVE"],
     default_role: "EXECUTIVE",
+    password: "1234",
     avatar: "",
   },
 ];
 
-const LOCAL_USERS_KEY = "lec_pastoral_accounts";
+const LOCAL_USERS_KEY = "lec_pastoral_accounts_v2";
 
 export const getPastoralAccounts = () => {
   try {

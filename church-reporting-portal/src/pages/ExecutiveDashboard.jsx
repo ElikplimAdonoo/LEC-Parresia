@@ -2,23 +2,23 @@ import React, { useEffect, useState } from "react";
 import { AppShell } from "../components/layout/AppShell";
 import { useAuth } from "../contexts/AuthContext";
 import { getStoredReports } from "../lib/reportStore";
+import { getAccraGreeting } from "../lib/timeGreeting";
 import { BarChart3, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export function ExecutiveDashboard() {
   const { profile } = useAuth();
   const [reports, setReports] = useState([]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "GOOD MORNING";
-    if (hour < 17) return "GOOD AFTERNOON";
-    return "GOOD EVENING";
-  };
-
   const councilMember = profile?.full_name || "Bishop / Executive Council ('Daddy')";
 
   useEffect(() => {
-    setReports(getStoredReports());
+    let isMounted = true;
+    getStoredReports().then((data) => {
+      if (isMounted) setReports(data);
+    });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const totalReports = reports.length;
@@ -33,7 +33,7 @@ export function ExecutiveDashboard() {
         <div className="pb-4 border-b border-gray-100 flex justify-between items-start">
           <div className="space-y-1">
             <p className="text-[10px] font-bold tracking-[0.16em] text-gray-400 uppercase">
-              {getGreeting()}
+              {getAccraGreeting()}
             </p>
             <h2 className="text-xl font-extrabold text-gray-900 tracking-tight leading-tight">
               {councilMember}

@@ -3,50 +3,43 @@ import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
 import { useAuth } from "../contexts/AuthContext";
 import { getStoredReports } from "../lib/reportStore";
-import { Plus, FileText, CheckCircle2, ArrowRight } from "lucide-react";
+import { getAccraGreeting } from "../lib/timeGreeting";
+import { Plus, FileText, CheckCircle2 } from "lucide-react";
 
 export function PastorDashboard() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
 
-  // Time-based greeting helper
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "GOOD MORNING";
-    if (hour < 17) return "GOOD AFTERNOON";
-    return "GOOD EVENING";
-  };
-
   const pastorName = profile?.full_name || "Rev. Makafui Tetteh Kumahlor";
   const branchName = profile?.branches?.name || "Parresia";
 
   useEffect(() => {
-    const all = getStoredReports();
-    // Filter reports for this branch or show all if newly submitted
-    const branchReports = all.filter(
-      (r) => !r.branch_name || r.branch_name.toLowerCase() === branchName.toLowerCase()
-    );
-    setReports(branchReports.length > 0 ? branchReports : all);
+    let isMounted = true;
+    getStoredReports().then((all) => {
+      if (!isMounted) return;
+      const branchReports = all.filter(
+        (r) => !r.branch_name || r.branch_name.toLowerCase() === branchName.toLowerCase()
+      );
+      setReports(branchReports.length > 0 ? branchReports : all);
+    });
+    return () => {
+      isMounted = false;
+    };
   }, [branchName]);
 
   const totalReports = reports.length;
   const latestReport = reports[0];
   const lastAttendance = latestReport ? latestReport.total_attendance : "—";
-  const lastStewardship = latestReport ? latestReport.total_stewardship : "—";
 
   return (
     <AppShell unitName={branchName}>
       <div className="space-y-6 pt-2">
-        {/* Mockup-style Greeting Header:
-            GOOD AFTERNOON
-            [Pastor Full Name]
-            Here is what is happening in your Church / Branch
-        */}
+        {/* Mockup-style Greeting Header */}
         <div className="flex justify-between items-start pb-4 border-b border-gray-100">
           <div className="space-y-1">
             <p className="text-[10px] font-bold tracking-[0.16em] text-gray-400 uppercase">
-              {getGreeting()}
+              {getAccraGreeting()}
             </p>
             <h2 className="text-xl font-extrabold text-gray-900 tracking-tight leading-tight">
               {pastorName}
@@ -58,7 +51,7 @@ export function PastorDashboard() {
 
           <button
             onClick={() => navigate("/submit")}
-            className="flex items-center gap-1 bg-[#1B2A6B] text-white text-xs font-semibold px-3 py-1.5 rounded hover:bg-[#152152] transition-colors shrink-0 shadow-xs"
+            className="flex items-center gap-1 bg-[#1B2A6B] text-white text-xs font-semibold px-3 py-1.5 rounded hover:bg-[#152152] transition-colors shrink-0 shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2]" />
             Submit
@@ -98,7 +91,7 @@ export function PastorDashboard() {
               <p>No reports submitted yet for {branchName}.</p>
               <button
                 onClick={() => navigate("/submit")}
-                className="text-[11px] text-[#1B2A6B] font-medium hover:underline block mx-auto mt-1"
+                className="text-[11px] text-[#1B2A6B] font-medium hover:underline block mx-auto mt-1 cursor-pointer"
               >
                 + Create service report
               </button>

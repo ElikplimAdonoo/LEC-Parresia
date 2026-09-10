@@ -2,22 +2,54 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { getPastoralAccounts, CENTRAL_ZONE_BRANCHES } from "../lib/pastorAccounts";
-import { ChevronRight, Shield, User } from "lucide-react";
+import { ChevronRight, ArrowLeft, Lock, Building2, Users, ShieldCheck, Check } from "lucide-react";
 
 export function LoginPage() {
   const { loginWithAccount, signInWithGoogle } = useAuth();
-  const [accounts, setAccounts] = useState(() => getPastoralAccounts());
-  const [selectedBranch, setSelectedBranch] = useState("Parresia");
+  const [selectedPortal, setSelectedPortal] = useState(null); // 'BRANCH_PASTOR' | 'ZONAL_HEAD' | 'EXECUTIVE' | null
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handlePastorLogin = (account, roleOverride = null) => {
-    loginWithAccount(account.id, roleOverride);
-    const targetRole = roleOverride || account.default_role || account.assigned_roles[0];
-    if (targetRole === "EXECUTIVE") {
+  const accounts = getPastoralAccounts();
+
+  // Filter accounts according to chosen portal
+  const filteredAccounts = selectedPortal
+    ? accounts.filter((acc) => acc.assigned_roles.includes(selectedPortal))
+    : [];
+
+  const handleSelectPortal = (portalKey) => {
+    setSelectedPortal(portalKey);
+    setSelectedAccount(null);
+    setPassword("");
+    setPasswordError("");
+  };
+
+  const handleSelectMinister = (acc) => {
+    setSelectedAccount(acc);
+    setPassword("");
+    setPasswordError("");
+  };
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    if (!selectedAccount) return;
+
+    // Verify password (default '1234' or customized)
+    const validPassword = selectedAccount.password || "1234";
+    if (password.trim() !== validPassword.trim()) {
+      setPasswordError("Incorrect password. Please enter valid password.");
+      return;
+    }
+
+    // Successfully authenticate into chosen portal
+    loginWithAccount(selectedAccount.id, selectedPortal);
+
+    if (selectedPortal === "EXECUTIVE") {
       navigate("/executive");
-    } else if (targetRole === "ZONAL_HEAD") {
+    } else if (selectedPortal === "ZONAL_HEAD") {
       navigate("/zonal");
     } else {
       navigate("/pastor");
@@ -27,18 +59,28 @@ export function LoginPage() {
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
-      setError("");
       await signInWithGoogle();
     } catch (err) {
-      setError(err.message || "Sign in failed");
       setLoading(false);
     }
+  };
+
+  const portalTitles = {
+    BRANCH_PASTOR: "Branch Pastor Portal",
+    ZONAL_HEAD: "Zonal Head Portal",
+    EXECUTIVE: "Executive Council Portal",
+  };
+
+  const portalSubtitles = {
+    BRANCH_PASTOR: "Select your branch to enter and submit weekly reports.",
+    ZONAL_HEAD: "Select your zone to monitor branch compliance and growth.",
+    EXECUTIVE: "Select apostolic council profile for worldwide oversight.",
   };
 
   return (
     <div className="min-h-screen bg-white flex flex-col justify-between px-6 py-8 text-gray-900">
       <div className="max-w-sm mx-auto w-full my-auto space-y-6">
-        {/* Header Branding */}
+        {/* Top Church Logo */}
         <div className="text-center space-y-2">
           <img
             src="/logo.jpg"
@@ -53,71 +95,165 @@ export function LoginPage() {
           </p>
         </div>
 
-        {error && (
-          <div className="text-[11px] text-red-600 bg-red-50 border border-red-100 rounded px-3 py-2">
-            {error}
+        {/* STEP 1: Main Portals Selection (Branch Pastor, Zonal Head, Executive Council) */}
+        {!selectedPortal && (
+          <div className="space-y-3 pt-2">
+            <p className="text-[10px] uppercase font-semibold tracking-wider text-gray-400 mb-2">
+              Select Your Portal Access
+            </p>
+
+            <div className="flex flex-col gap-2.5">
+              <button
+                onClick={() => handleSelectPortal("BRANCH_PASTOR")}
+                className="w-full text-left p-3.5 border border-gray-200 rounded-lg hover:border-[#1B2A6B] hover:shadow-xs transition-all group flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#1B2A6B]/5 text-[#1B2A6B] flex items-center justify-center shrink-0">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-gray-900 group-hover:text-[#1B2A6B]">
+                      Branch Pastor Portal
+                    </h3>
+                    <p className="text-[11px] text-gray-400">
+                      Parresia & Central Zone congregations
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#1B2A6B]" />
+              </button>
+
+              <button
+                onClick={() => handleSelectPortal("ZONAL_HEAD")}
+                className="w-full text-left p-3.5 border border-gray-200 rounded-lg hover:border-[#1B2A6B] hover:shadow-xs transition-all group flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#1B2A6B]/5 text-[#1B2A6B] flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-gray-900 group-hover:text-[#1B2A6B]">
+                      Zonal Head Portal
+                    </h3>
+                    <p className="text-[11px] text-gray-400">
+                      Central Zone leadership & oversight
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#1B2A6B]" />
+              </button>
+
+              <button
+                onClick={() => handleSelectPortal("EXECUTIVE")}
+                className="w-full text-left p-3.5 border border-gray-200 rounded-lg hover:border-[#1B2A6B] hover:shadow-xs transition-all group flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#1B2A6B]/5 text-[#1B2A6B] flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-gray-900 group-hover:text-[#1B2A6B]">
+                      Executive Council Portal
+                    </h3>
+                    <p className="text-[11px] text-gray-400">
+                      Apostolic council & worldwide feed
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#1B2A6B]" />
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Individual Minister Logins */}
-        <div className="space-y-3 pt-2">
-          <div className="flex justify-between items-center">
-            <p className="text-[10px] uppercase font-semibold tracking-wider text-gray-400">
-              Select Pastoral Account
-            </p>
-            <span className="text-[10px] text-gray-400">Central Zone</span>
-          </div>
+        {/* STEP 2: Branch / Account Selection & Password Input */}
+        {selectedPortal && (
+          <div className="space-y-4 pt-1">
+            <button
+              onClick={() => handleSelectPortal(null)}
+              className="text-xs text-gray-500 hover:text-[#1B2A6B] flex items-center gap-1 font-medium transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to Portals
+            </button>
 
-          <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden">
-            {accounts.map((acc) => {
-              const hasMultipleRoles = acc.assigned_roles && acc.assigned_roles.length > 1;
-              return (
-                <div
-                  key={acc.id}
-                  className="p-3 hover:bg-gray-50/80 transition-colors flex items-center justify-between group"
-                >
-                  <div
-                    onClick={() => handlePastorLogin(acc)}
-                    className="flex-1 cursor-pointer min-w-0 pr-2"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="text-xs font-bold text-gray-900 truncate group-hover:text-[#1B2A6B]">
-                        {acc.full_name}
-                      </h3>
+            <div>
+              <h2 className="text-sm font-bold text-gray-900">
+                {portalTitles[selectedPortal]}
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {portalSubtitles[selectedPortal]}
+              </p>
+            </div>
+
+            {/* List of Units / Branches */}
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase font-semibold tracking-wider text-gray-400">
+                Select Your Name / Branch
+              </p>
+              <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden max-h-56 overflow-y-auto">
+                {filteredAccounts.map((acc) => {
+                  const isSelected = selectedAccount?.id === acc.id;
+                  return (
+                    <div
+                      key={acc.id}
+                      onClick={() => handleSelectMinister(acc)}
+                      className={`p-3 text-xs cursor-pointer transition-colors flex items-center justify-between ${
+                        isSelected
+                          ? "bg-[#1B2A6B]/5 border-l-3 border-[#1B2A6B]"
+                          : "hover:bg-gray-50"
+                      }`}
+                    >
+                      <div>
+                        <p className={`font-bold ${isSelected ? "text-[#1B2A6B]" : "text-gray-900"}`}>
+                          {acc.branch_name}
+                        </p>
+                        <p className="text-[11px] text-gray-500">
+                          {acc.full_name}
+                        </p>
+                      </div>
+                      {isSelected && <Check className="w-4 h-4 text-[#1B2A6B]" />}
                     </div>
-                    <p className="text-[11px] text-gray-500 truncate">
-                      {acc.branch_name} &bull; {acc.zone_name}
-                    </p>
-                    <div className="flex items-center gap-1 mt-1">
-                      {acc.assigned_roles.map((r) => (
-                        <span
-                          key={r}
-                          className="text-[9px] px-1.5 py-0.2 rounded font-medium bg-gray-100 text-gray-600"
-                        >
-                          {r === "BRANCH_PASTOR"
-                            ? "Branch Pastor"
-                            : r === "ZONAL_HEAD"
-                            ? "Zonal Head"
-                            : "Council Member"}
-                        </span>
-                      ))}
-                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Password Entry Form */}
+            {selectedAccount && (
+              <form onSubmit={handleLoginSubmit} className="space-y-3 pt-2 border-t border-gray-100">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-[11px] font-semibold text-gray-700 flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-gray-400" /> Enter Password for {selectedAccount.branch_name}
+                    </label>
+                    <span className="text-[10px] text-gray-400">Default: 1234</span>
                   </div>
-
-                  {/* Direct Launch Button */}
-                  <button
-                    onClick={() => handlePastorLogin(acc)}
-                    className="px-2.5 py-1 text-[11px] font-semibold text-[#1B2A6B] bg-[#1B2A6B]/5 hover:bg-[#1B2A6B] hover:text-white rounded transition-colors shrink-0 flex items-center gap-0.5"
-                  >
-                    Enter <ChevronRight className="w-3 h-3" />
-                  </button>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password (e.g. 1234)"
+                    className="w-full border border-gray-200 rounded px-3 py-2 text-xs text-gray-900 outline-none focus:border-[#1B2A6B]"
+                    required
+                    autoFocus
+                  />
+                  {passwordError && (
+                    <p className="text-[11px] text-red-600 mt-1">{passwordError}</p>
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        </div>
 
-        {/* Sign in with Google (at the bottom) */}
+                <button
+                  type="submit"
+                  className="w-full py-2.5 px-4 bg-[#1B2A6B] text-white text-xs font-semibold rounded hover:bg-[#152152] transition-colors shadow-xs cursor-pointer"
+                >
+                  Log into {selectedAccount.branch_name} Portal
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* Sign in with Google (at bottom) */}
         <div className="pt-3 border-t border-gray-100">
           <button
             onClick={handleGoogleSignIn}
