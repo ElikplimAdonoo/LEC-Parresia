@@ -116,7 +116,7 @@ export function LoginPage() {
                       Branch Pastor Portal
                     </h3>
                     <p className="text-[11px] text-gray-400">
-                      Parresia & Central Zone congregations
+                      Parresia & Central Zone branches
                     </p>
                   </div>
                 </div>
