@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-const STORAGE_KEY = "lec_service_reports_store_v2";
+const STORAGE_KEY = "lec_service_reports_store_v3";
 
 const DEFAULT_REPORTS = [
   {
@@ -10,13 +10,47 @@ const DEFAULT_REPORTS = [
     service_type: "SUNDAY_MEGA",
     service_date: new Date().toISOString().split("T")[0],
     gathering_center: "LC Live Center",
+    
+    // Attendance
+    pastors_count: 2,
+    shepherds_count: 14,
+    members_count: 110,
+    first_timers_count: 12,
+    children_count: 26,
+    teens_count: 20,
     total_attendance: 184,
+
+    // Finance (GHC)
+    offering: 1450.0,
+    tithe: 2500.0,
+    partnership: 800.0,
+    first_fruit: 500.0,
     total_stewardship: 5250.0,
-    new_converts: 6,
-    first_timers: 9,
-    sermon_title: "The Parresia of Faith",
+
+    // Preacher & Message
     preacher: "Bishop Daddy",
-    notes: "Supernatural gathering, glorious praise, and mighty testimonies.",
+    message_title: "The Parresia of Faith",
+    new_members: 8,
+
+    // Organised Busing / Gathering Report (Sunday)
+    num_bused: 65,
+    num_own_accord: 119,
+    num_organised_buses: 3,
+    total_busing_cost: 450.0,
+
+    // Soul Winning Report
+    altar_call: 9,
+    cell_evangelism: 14,
+    outreach: 22,
+    total_souls_won: 45,
+
+    // Cell System Report (Sunday)
+    num_cells_in_branch: 12,
+    num_cells_bused: 10,
+    num_people_via_cells: 72,
+
+    spectacular_event: "Mighty outpouring of the Spirit with testimonies of healing and breakthrough.",
+    
     zone_name: "Central Zone",
     status: "SUBMITTED",
     created_at: new Date().toISOString(),
@@ -32,27 +66,66 @@ export const getStoredReports = async () => {
       .order("created_at", { ascending: false });
 
     if (!error && data && data.length > 0) {
-      // Map supabase rows to app format
-      const mapped = data.map((r) => ({
-        id: r.id,
-        branch_name: r.raw_data?.branch_name || "Parresia",
-        pastor_name: r.raw_data?.pastor_name || "Rev. Makafui Tetteh Kumahlor",
-        service_type: r.service_type === "SUNDAY" ? "SUNDAY_MEGA" : "MIDWEEK_TTLHA",
-        service_date: r.report_date,
-        gathering_center: r.raw_data?.gathering_center || "LC Live Center",
-        total_attendance: r.total_attendance || 0,
-        total_stewardship: r.total_finance || 0,
-        new_converts: r.raw_data?.new_converts || 0,
-        first_timers: r.raw_data?.first_timers || 0,
-        sermon_title: r.message_title || "",
-        preacher: r.preacher || "",
-        notes: r.spectacular_notes || "",
-        zone_name: "Central Zone",
-        status: "SUBMITTED",
-        created_at: r.created_at || new Date().toISOString(),
-      }));
+      const mapped = data.map((r) => {
+        const raw = r.raw_data || {};
+        return {
+          id: r.id,
+          branch_name: raw.branch_name || "Parresia",
+          pastor_name: raw.pastor_name || "Rev. Makafui Tetteh Kumahlor",
+          service_type: r.service_type === "SUNDAY" ? "SUNDAY_MEGA" : "MIDWEEK_TTLHA",
+          service_date: r.report_date || raw.service_date,
+          gathering_center: raw.gathering_center || "LC Live Center",
+          
+          // Attendance
+          pastors_count: raw.pastors_count || r.pastors_count || 0,
+          shepherds_count: raw.shepherds_count || r.shepherds_count || 0,
+          members_count: raw.members_count || r.members_count || 0,
+          first_timers_count: raw.first_timers_count || r.first_timers_count || 0,
+          children_count: raw.children_count || r.children_count || 0,
+          teens_count: raw.teens_count || r.teens_count || 0,
+          total_attendance: r.total_attendance || raw.total_attendance || 0,
 
-      // Cache locally
+          // Finance
+          offering: raw.offering || r.offering || 0,
+          tithe: raw.tithe || r.tithe || 0,
+          partnership: raw.partnership || r.partnership || 0,
+          first_fruit: raw.first_fruit || r.first_fruit || 0,
+          total_stewardship: r.total_finance || raw.total_stewardship || 0,
+          total_bus_offering: raw.total_bus_offering || r.bus_offering || 0,
+
+          // Preacher & Message
+          preacher: r.preacher || raw.preacher || "",
+          message_title: r.message_title || raw.message_title || "",
+          new_members: r.new_members || raw.new_members || 0,
+
+          // Sunday Busing
+          num_bused: raw.num_bused || r.num_bused || 0,
+          num_own_accord: raw.num_own_accord || r.num_own_accord || 0,
+          num_organised_buses: raw.num_organised_buses || r.num_organised_buses || 0,
+          total_busing_cost: raw.total_busing_cost || r.total_busing_cost || 0,
+
+          // Soul Winning
+          altar_call: raw.altar_call || r.altar_call || 0,
+          cell_evangelism: raw.cell_evangelism || r.cell_evangelism || 0,
+          outreach: raw.outreach || r.outreach || 0,
+          total_souls_won: raw.total_souls_won || r.total_souls_won || 0,
+
+          // Cell System
+          num_cells_in_branch: raw.num_cells_in_branch || r.cells_in_branch || 0,
+          num_cells_bused: raw.num_cells_bused || r.cells_bused_to_church || 0,
+          num_people_via_cells: raw.num_people_via_cells || r.people_via_cells || 0,
+          cell_meetings_held: raw.cell_meetings_held || r.cell_meetings_held || 0,
+          cell_meetings_not_held: raw.cell_meetings_not_held || r.cell_meetings_not_held || 0,
+          unheld_cells_report: raw.unheld_cells_report || r.unheld_cells_report || "",
+
+          spectacular_event: raw.spectacular_event || r.spectacular_notes || "",
+          
+          zone_name: "Central Zone",
+          status: "SUBMITTED",
+          created_at: r.created_at || new Date().toISOString(),
+        };
+      });
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
       return mapped;
     }
@@ -67,7 +140,6 @@ export const getStoredReports = async () => {
       const parsed = JSON.parse(raw);
       if (parsed.length > 0) return parsed;
     }
-    // Seed default if empty so live dashboards always show active Parresia submissions
     localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_REPORTS));
     return DEFAULT_REPORTS;
   } catch {
@@ -99,11 +171,44 @@ export const saveReport = async (reportData) => {
       {
         service_type: reportData.service_type === "SUNDAY_MEGA" ? "SUNDAY" : "MIDWEEK",
         report_date: reportData.service_date || new Date().toISOString().split("T")[0],
-        message_title: reportData.sermon_title || "",
+        message_title: reportData.message_title || reportData.sermon_title || "",
         preacher: reportData.preacher || "",
+        new_members: parseInt(reportData.new_members) || 0,
+        
+        pastors_count: parseInt(reportData.pastors_count) || 0,
+        shepherds_count: parseInt(reportData.shepherds_count) || 0,
+        members_count: parseInt(reportData.members_count) || 0,
+        first_timers_count: parseInt(reportData.first_timers_count) || 0,
+        teens_count: parseInt(reportData.teens_count) || 0,
+        children_count: parseInt(reportData.children_count) || 0,
         total_attendance: reportData.total_attendance || 0,
+
+        offering: parseFloat(reportData.offering) || 0,
+        tithe: parseFloat(reportData.tithe) || 0,
+        partnership: parseFloat(reportData.partnership) || 0,
+        first_fruit: parseFloat(reportData.first_fruit) || 0,
         total_finance: reportData.total_stewardship || 0,
-        spectacular_notes: reportData.notes || "",
+        bus_offering: parseFloat(reportData.total_bus_offering) || 0,
+
+        altar_call: parseInt(reportData.altar_call) || 0,
+        cell_evangelism: parseInt(reportData.cell_evangelism) || 0,
+        outreach: parseInt(reportData.outreach) || 0,
+        total_souls_won: reportData.total_souls_won || 0,
+
+        cells_in_branch: parseInt(reportData.num_cells_in_branch) || 0,
+        cell_meetings_held: parseInt(reportData.cell_meetings_held) || 0,
+        cell_meetings_not_held: parseInt(reportData.cell_meetings_not_held) || 0,
+        unheld_cells_report: reportData.unheld_cells_report || "",
+
+        cells_bused_to_church: parseInt(reportData.num_cells_bused) || 0,
+        people_via_cells: parseInt(reportData.num_people_via_cells) || 0,
+
+        num_bused: parseInt(reportData.num_bused) || 0,
+        num_own_accord: parseInt(reportData.num_own_accord) || 0,
+        num_organised_buses: parseInt(reportData.num_organised_buses) || 0,
+        total_busing_cost: parseFloat(reportData.total_busing_cost) || 0,
+
+        spectacular_notes: reportData.spectacular_event || "",
         status: "SUBMITTED",
         raw_data: reportData,
       },

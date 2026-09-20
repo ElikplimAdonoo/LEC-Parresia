@@ -110,7 +110,7 @@ export function PastorDashboard() {
                       </span>
                     </div>
                     <p className="text-[11px] text-gray-400">
-                      Date: {rep.service_date || "N/A"} &bull; {rep.sermon_title ? `"${rep.sermon_title}"` : "No title"}
+                      Date: {rep.service_date || "N/A"} &bull; {rep.message_title || rep.sermon_title ? `"${rep.message_title || rep.sermon_title}"` : "No title"}
                     </p>
                   </div>
                   <div className="text-right">

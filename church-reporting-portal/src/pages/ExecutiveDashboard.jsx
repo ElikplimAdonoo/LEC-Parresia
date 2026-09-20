@@ -106,9 +106,9 @@ export function ExecutiveDashboard() {
                     <p className="text-[11px] text-gray-400">
                       {rep.service_type === "SUNDAY_MEGA" ? "Sunday Mega Gathering" : "Midweek TTLHA Cell"} &bull; {rep.service_date}
                     </p>
-                    {rep.sermon_title && (
+                    {(rep.message_title || rep.sermon_title) && (
                       <p className="text-[10px] text-gray-500 italic">
-                        "{rep.sermon_title}" {rep.preacher ? `by ${rep.preacher}` : ""}
+                        "{rep.message_title || rep.sermon_title}" {rep.preacher ? `by ${rep.preacher}` : ""}
                       </p>
                     )}
                   </div>
