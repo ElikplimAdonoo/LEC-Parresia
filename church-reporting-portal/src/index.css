@@ -9,11 +9,19 @@
   --color-muted: #6B7280;
 }
 
+html {
+  font-size: 102%; /* Reduced by 5% from previous 107% */
+}
+
 body {
   background-color: #FFFFFF;
   color: #111827;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+input, textarea, select {
+  font-family: inherit;
 }
 
 ::-webkit-scrollbar {

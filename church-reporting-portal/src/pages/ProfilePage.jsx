@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { AppShell } from "../components/layout/AppShell";
-import { CENTRAL_ZONE_BRANCHES } from "../lib/pastorAccounts";
-import { LogOut, CheckCircle2, User, Building2, Phone, Shield, Edit3 } from "lucide-react";
+import { ALL_BRANCHES } from "../lib/pastorAccounts";
+import { LogOut, CheckCircle2, Edit3, Eye, EyeOff } from "lucide-react";
 
 export function ProfilePage() {
   const { user, profile, activeRole, assignedRoles, switchRole, updateProfile, signOut } = useAuth();
@@ -12,6 +12,7 @@ export function ProfilePage() {
   const isInitiallyUnassigned = profile?.full_name === "Not assigned yet";
   const [isEditing, setIsEditing] = useState(isInitiallyUnassigned);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   // Editable fields initialized from current profile
   const [fullName, setFullName] = useState(
@@ -21,15 +22,42 @@ export function ProfilePage() {
   const [branchName, setBranchName] = useState(profile?.branches?.name || "Parresia");
   const [gatheringCenter, setGatheringCenter] = useState(profile?.branches?.gathering_center || "");
 
+  // Avatar
+  const [avatarData, setAvatarData] = useState(profile?.avatar || null);
+
+  // Password change
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
+
   const handleSave = (e) => {
     e.preventDefault();
+    setSaveError("");
+
+    // Password validation
+    if (newPassword || confirmPassword) {
+      if (newPassword.length < 6) {
+        setSaveError("Password must be at least 6 characters.");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setSaveError("Passwords do not match.");
+        return;
+      }
+    }
+
     const finalName = fullName.trim() || "Branch Pastor";
     updateProfile({
       full_name: finalName,
       phone: phone,
       branch_name: branchName,
       gathering_center: gatheringCenter,
+      avatar: avatarData,
+      ...(newPassword ? { password: newPassword } : {}),
     });
+    setNewPassword("");
+    setConfirmPassword("");
     setIsEditing(false);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
@@ -43,8 +71,11 @@ export function ProfilePage() {
   const roleTitle = {
     BRANCH_PASTOR: "Branch Pastor",
     ZONAL_HEAD: "Zonal Head",
-    EXECUTIVE: "Executive Council ('Daddy')",
-  }[activeRole] || "Pastor";
+    EXECUTIVE:
+      profile?.id === "bishop-isaac-oti-boateng"
+        ? "Global Pastor / General Overseer"
+        : "Executive Council",
+  }[activeRole] || (profile?.id === "bishop-isaac-oti-boateng" ? "Global Pastor / General Overseer" : "Pastor");
 
   const displayName = profile?.full_name || "Not assigned yet";
 
@@ -66,16 +97,17 @@ export function ProfilePage() {
 
         {/* Profile Header */}
         <div className="flex items-center gap-3.5 py-3 border-b border-gray-100">
-          <div className="w-12 h-12 rounded-full bg-[#1B2A6B]/5 border border-[#1B2A6B]/20 flex items-center justify-center text-[#1B2A6B] font-bold text-base shrink-0">
-            {(displayName !== "Not assigned yet" ? displayName.charAt(0) : "P").toUpperCase()}
+          {/* Avatar */}
+          <div className="w-12 h-12 rounded-full bg-[#1B2A6B]/5 border border-[#1B2A6B]/20 overflow-hidden flex items-center justify-center text-[#1B2A6B] font-bold text-base shrink-0">
+            {avatarData ? (
+              <img src={avatarData} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              (displayName !== "Not assigned yet" ? displayName.charAt(0) : "P").toUpperCase()
+            )}
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-sm font-bold text-gray-900 truncate">
-              {displayName}
-            </h2>
-            <p className="text-xs text-gray-400 truncate">
-              {branchName} &bull; Central Zone
-            </p>
+            <h2 className="text-sm font-bold text-gray-900 truncate">{displayName}</h2>
+            <p className="text-xs text-gray-400 truncate">{branchName}</p>
             <div className="flex items-center gap-1 mt-1">
               <span className="text-[10px] uppercase font-bold tracking-wider text-[#1B2A6B] bg-[#1B2A6B]/5 px-2 py-0.5 rounded">
                 Active: {roleTitle}
@@ -93,7 +125,7 @@ export function ProfilePage() {
         {saveSuccess && (
           <div className="p-2.5 bg-emerald-50 border border-emerald-100 rounded text-xs text-emerald-800 flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Pastor profile details saved successfully!</span>
+            <span>Profile saved successfully!</span>
           </div>
         )}
 
@@ -101,8 +133,38 @@ export function ProfilePage() {
         {isEditing ? (
           <form onSubmit={handleSave} className="space-y-4 border border-gray-100 rounded-lg p-4 bg-gray-50/50">
             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-              Pastor & Branch Information
+              Pastor &amp; Branch Information
             </p>
+
+            {/* Profile Picture */}
+            <div>
+              <label className="block text-[11px] text-gray-700 font-medium mb-1">
+                Profile Picture
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#1B2A6B]/5 border border-[#1B2A6B]/20 overflow-hidden flex items-center justify-center shrink-0">
+                  {avatarData ? (
+                    <img src={avatarData} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[#1B2A6B] font-bold text-sm">
+                      {(fullName || "P").charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => setAvatarData(ev.target.result);
+                    reader.readAsDataURL(file);
+                  }}
+                  className="block flex-1 text-xs text-gray-600 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-[#1B2A6B]/5 file:text-[#1B2A6B] hover:file:bg-[#1B2A6B]/10 cursor-pointer"
+                />
+              </div>
+            </div>
 
             <div>
               <label className="block text-[11px] text-gray-700 font-medium mb-1">
@@ -120,17 +182,15 @@ export function ProfilePage() {
 
             <div>
               <label className="block text-[11px] text-gray-700 font-medium mb-1">
-                Assigned Branch (Central Zone)
+                Assigned Branch
               </label>
               <select
                 value={branchName}
                 onChange={(e) => setBranchName(e.target.value)}
                 className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs text-gray-900 outline-none focus:border-[#1B2A6B]"
               >
-                {CENTRAL_ZONE_BRANCHES.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
+                {ALL_BRANCHES.map((b) => (
+                  <option key={b} value={b}>{b}</option>
                 ))}
               </select>
             </div>
@@ -153,13 +213,62 @@ export function ProfilePage() {
                 Contact Phone Number
               </label>
               <input
-                type="text"
+                type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+233 ..."
                 className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 text-xs text-gray-900 outline-none focus:border-[#1B2A6B]"
               />
             </div>
+
+            {/* Password Change */}
+            <div className="pt-3 border-t border-gray-100 space-y-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                Change Password (optional)
+              </p>
+              <div>
+                <label className="block text-[11px] text-gray-700 font-medium mb-1">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showNewPw ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Min. 6 characters"
+                    className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs text-gray-900 outline-none focus:border-[#1B2A6B]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPw((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showNewPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] text-gray-700 font-medium mb-1">Confirm New Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPw ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    className="w-full bg-white border border-gray-200 rounded px-2.5 py-1.5 pr-8 text-xs text-gray-900 outline-none focus:border-[#1B2A6B]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPw((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {saveError && (
+              <p className="text-[11px] text-red-600">{saveError}</p>
+            )}
 
             <button
               type="submit"

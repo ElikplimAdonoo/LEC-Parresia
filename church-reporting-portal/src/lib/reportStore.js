@@ -8,7 +8,7 @@ const DEFAULT_REPORTS = [
     branch_name: "Parresia",
     pastor_name: "Rev. Makafui Tetteh Kumahlor",
     service_type: "SUNDAY_MEGA",
-    service_date: new Date().toISOString().split("T")[0],
+    service_date: "2026-09-13",
     gathering_center: "LC Live Center",
     
     // Attendance
@@ -28,7 +28,7 @@ const DEFAULT_REPORTS = [
     total_stewardship: 5250.0,
 
     // Preacher & Message
-    preacher: "Bishop Daddy",
+    preacher: "Bishop Isaac Oti-Boateng",
     message_title: "The Parresia of Faith",
     new_members: 8,
 
@@ -147,23 +147,72 @@ export const getStoredReports = async () => {
   }
 };
 
+export const checkDuplicateReport = (branchName, serviceDate, serviceType, reportsList = null) => {
+  if (!branchName || !serviceDate || !serviceType) return null;
+  const list = reportsList || (() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : DEFAULT_REPORTS;
+    } catch {
+      return DEFAULT_REPORTS;
+    }
+  })();
+
+  const b = branchName.trim().toLowerCase();
+  const d = serviceDate.trim();
+  const t = serviceType.trim();
+
+  return (
+    list.find(
+      (r) =>
+        (r.branch_name || "").trim().toLowerCase() === b &&
+        (r.service_date || "").trim() === d &&
+        (r.service_type || "").trim() === t
+    ) || null
+  );
+};
+
 export const saveReport = async (reportData) => {
+  // Check if report for this branch, date and service type was already submitted
+  const raw = localStorage.getItem(STORAGE_KEY);
+  const current = raw ? JSON.parse(raw) : DEFAULT_REPORTS;
+
+  const duplicate = checkDuplicateReport(
+    reportData.branch_name,
+    reportData.service_date,
+    reportData.service_type,
+    current
+  );
+
+  if (duplicate) {
+    throw new Error(
+      `A report for ${reportData.branch_name} on ${reportData.service_date} (${
+        reportData.service_type === "SUNDAY_MEGA" ? "Mega Gathering" : "TTLHA Cell"
+      }) has already been submitted.`
+    );
+  }
+
   const newReport = {
     id: "rep-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7),
     ...reportData,
+    // Store audio and Google Photos
+    sermon_audio_name: reportData.sermon_audio_name || null,
+    sermon_audio_data: reportData.sermon_audio_data || null,
+    google_photos_url: reportData.google_photos_url || null,
     created_at: new Date().toISOString(),
     status: "SUBMITTED",
   };
 
   // 1. Immediately update LocalStorage cache
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const current = raw ? JSON.parse(raw) : DEFAULT_REPORTS;
     const updated = [newReport, ...current];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   } catch (e) {
     console.error("LocalStorage save failed:", e);
   }
+
+  // Notify all listening dashboards of new data
+  notifyReportsUpdated();
 
   // 2. Sync to Supabase so it appears across all devices and URLs (localhost and https)
   try {
@@ -209,6 +258,8 @@ export const saveReport = async (reportData) => {
         total_busing_cost: parseFloat(reportData.total_busing_cost) || 0,
 
         spectacular_notes: reportData.spectacular_event || "",
+        sermon_audio_name: reportData.sermon_audio_name || null,
+        google_photos_url: reportData.google_photos_url || null,
         status: "SUBMITTED",
         raw_data: reportData,
       },
@@ -218,4 +269,87 @@ export const saveReport = async (reportData) => {
   }
 
   return newReport;
+};
+
+// Synchronous cache reader — use as useState initializer for instant load
+export const getCachedReportsSync = (branchFilter = null) => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return DEFAULT_REPORTS;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_REPORTS;
+    if (!branchFilter) return parsed;
+    const bf = branchFilter.trim().toLowerCase();
+    const filtered = parsed.filter((r) => (r.branch_name || "").trim().toLowerCase() === bf);
+    return filtered.length > 0 ? filtered : parsed;
+  } catch {
+    return DEFAULT_REPORTS;
+  }
+};
+
+// Dispatch a CustomEvent so all open dashboards can refresh instantly
+export const notifyReportsUpdated = () => {
+  try {
+    window.dispatchEvent(new CustomEvent("lec_report_updated"));
+  } catch {
+    // non-browser environment — silently ignore
+  }
+};
+
+export const canUndoReport = (report) => {
+  if (!report || !report.created_at) return false;
+  const created = new Date(report.created_at).getTime();
+  if (isNaN(created)) return false;
+  const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+  return (Date.now() - created) <= THREE_HOURS_MS;
+};
+
+export const getRemainingUndoTime = (report) => {
+  if (!report || !report.created_at) return null;
+  const created = new Date(report.created_at).getTime();
+  if (isNaN(created)) return null;
+  const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+  const diff = THREE_HOURS_MS - (Date.now() - created);
+  if (diff <= 0) return null;
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+};
+
+export const undoReport = async (reportId) => {
+  let reports = [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    reports = raw ? JSON.parse(raw) : DEFAULT_REPORTS;
+  } catch {
+    reports = DEFAULT_REPORTS;
+  }
+
+  const targetReport = reports.find((r) => r.id === reportId);
+  if (!targetReport) {
+    throw new Error("Report not found to undo.");
+  }
+
+  // 3-hour expiry check
+  if (!canUndoReport(targetReport)) {
+    throw new Error("The undo window has expired. Submissions can only be undone within 3 hours.");
+  }
+
+  // Remove report from local storage cache
+  const updatedReports = reports.filter((r) => r.id !== reportId);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedReports));
+  } catch (e) {
+    console.error("Failed to update localStorage on undo:", e);
+  }
+
+  // Remove from Supabase
+  try {
+    await supabase.from("service_reports").delete().eq("id", reportId);
+  } catch (e) {
+    console.warn("Supabase undo delete error:", e);
+  }
+
+  return targetReport;
 };

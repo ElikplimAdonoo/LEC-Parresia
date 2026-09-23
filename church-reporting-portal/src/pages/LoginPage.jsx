@@ -1,8 +1,17 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { getPastoralAccounts, CENTRAL_ZONE_BRANCHES } from "../lib/pastorAccounts";
-import { ChevronRight, ArrowLeft, Lock, Building2, Users, ShieldCheck, Check } from "lucide-react";
+import { getPastoralAccounts, LEC_ZONES } from "../lib/pastorAccounts";
+import {
+  ChevronRight,
+  ArrowLeft,
+  Lock,
+  Building2,
+  Users,
+  ShieldCheck,
+  Check,
+  Search,
+} from "lucide-react";
 
 export function LoginPage() {
   const { loginWithAccount, signInWithGoogle } = useAuth();
@@ -11,6 +20,8 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [zoneFilter, setZoneFilter] = useState("ALL");
   const navigate = useNavigate();
 
   const accounts = getPastoralAccounts();
@@ -20,11 +31,26 @@ export function LoginPage() {
     ? accounts.filter((acc) => acc.assigned_roles.includes(selectedPortal))
     : [];
 
+  // Search & zone filtering
+  const displayedAccounts = filteredAccounts.filter((acc) => {
+    const matchesZone =
+      zoneFilter === "ALL" || acc.zone_name === zoneFilter;
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      (acc.branch_name || "").toLowerCase().includes(q) ||
+      (acc.full_name || "").toLowerCase().includes(q) ||
+      (acc.zone_name || "").toLowerCase().includes(q);
+    return matchesZone && matchesSearch;
+  });
+
   const handleSelectPortal = (portalKey) => {
     setSelectedPortal(portalKey);
     setSelectedAccount(null);
     setPassword("");
     setPasswordError("");
+    setSearchQuery("");
+    setZoneFilter("ALL");
   };
 
   const handleSelectMinister = (acc) => {
@@ -74,7 +100,7 @@ export function LoginPage() {
   const portalSubtitles = {
     BRANCH_PASTOR: "Select your branch to enter and submit weekly reports.",
     ZONAL_HEAD: "Select your zone to monitor branch compliance and growth.",
-    EXECUTIVE: "Select apostolic council profile for worldwide oversight.",
+    EXECUTIVE: "Apostolic Council & Worldwide leadership feed.",
   };
 
   return (
@@ -105,7 +131,7 @@ export function LoginPage() {
             <div className="flex flex-col gap-2.5">
               <button
                 onClick={() => handleSelectPortal("BRANCH_PASTOR")}
-                className="w-full text-left p-3.5 border border-gray-200 rounded-lg hover:border-[#1B2A6B] hover:shadow-xs transition-all group flex items-center justify-between"
+                className="w-full text-left p-3.5 border border-gray-200 rounded-lg hover:border-[#1B2A6B] hover:shadow-xs transition-all group flex items-center justify-between cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#1B2A6B]/5 text-[#1B2A6B] flex items-center justify-center shrink-0">
@@ -116,7 +142,7 @@ export function LoginPage() {
                       Branch Pastor Portal
                     </h3>
                     <p className="text-[11px] text-gray-400">
-                      Parresia & Central Zone branches
+                      112 branches across 14 zones
                     </p>
                   </div>
                 </div>
@@ -125,7 +151,7 @@ export function LoginPage() {
 
               <button
                 onClick={() => handleSelectPortal("ZONAL_HEAD")}
-                className="w-full text-left p-3.5 border border-gray-200 rounded-lg hover:border-[#1B2A6B] hover:shadow-xs transition-all group flex items-center justify-between"
+                className="w-full text-left p-3.5 border border-gray-200 rounded-lg hover:border-[#1B2A6B] hover:shadow-xs transition-all group flex items-center justify-between cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#1B2A6B]/5 text-[#1B2A6B] flex items-center justify-center shrink-0">
@@ -136,7 +162,7 @@ export function LoginPage() {
                       Zonal Head Portal
                     </h3>
                     <p className="text-[11px] text-gray-400">
-                      Central Zone leadership & oversight
+                      14 zones leadership & oversight
                     </p>
                   </div>
                 </div>
@@ -145,7 +171,7 @@ export function LoginPage() {
 
               <button
                 onClick={() => handleSelectPortal("EXECUTIVE")}
-                className="w-full text-left p-3.5 border border-gray-200 rounded-lg hover:border-[#1B2A6B] hover:shadow-xs transition-all group flex items-center justify-between"
+                className="w-full text-left p-3.5 border border-gray-200 rounded-lg hover:border-[#1B2A6B] hover:shadow-xs transition-all group flex items-center justify-between cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#1B2A6B]/5 text-[#1B2A6B] flex items-center justify-center shrink-0">
@@ -156,7 +182,7 @@ export function LoginPage() {
                       Executive Council Portal
                     </h3>
                     <p className="text-[11px] text-gray-400">
-                      Apostolic council & worldwide feed
+                      Bishop Isaac Oti-Boateng & Council
                     </p>
                   </div>
                 </div>
@@ -171,7 +197,7 @@ export function LoginPage() {
           <div className="space-y-4 pt-1">
             <button
               onClick={() => handleSelectPortal(null)}
-              className="text-xs text-gray-500 hover:text-[#1B2A6B] flex items-center gap-1 font-medium transition-colors"
+              className="text-xs text-gray-500 hover:text-[#1B2A6B] flex items-center gap-1 font-medium transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back to Portals
             </button>
@@ -185,36 +211,123 @@ export function LoginPage() {
               </p>
             </div>
 
-            {/* List of Units / Branches */}
+            {/* Search and Zone Filter (Especially helpful for 112 branches) */}
             <div className="space-y-2">
-              <p className="text-[10px] uppercase font-semibold tracking-wider text-gray-400">
-                Select Your Name / Branch
-              </p>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder={
+                    selectedPortal === "BRANCH_PASTOR"
+                      ? "Search branch or pastor..."
+                      : selectedPortal === "ZONAL_HEAD"
+                      ? "Search zone or zonal head..."
+                      : "Search council member..."
+                  }
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#1B2A6B]"
+                />
+              </div>
+
+              {selectedPortal === "BRANCH_PASTOR" && (
+                <div className="flex items-center gap-1.5">
+                  <select
+                    value={zoneFilter}
+                    onChange={(e) => setZoneFilter(e.target.value)}
+                    className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 outline-none focus:border-[#1B2A6B] bg-gray-50/50 cursor-pointer"
+                  >
+                    <option value="ALL">All 14 Zones ({filteredAccounts.length} branches)</option>
+                    {LEC_ZONES.map((z) => (
+                      <option key={z.zone_name} value={z.zone_name}>
+                        {z.zone_name} ({z.branches.length})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* List of Units / Branches */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-[10px] uppercase font-semibold tracking-wider text-gray-400">
+                <span>
+                  {selectedPortal === "BRANCH_PASTOR"
+                    ? "Select Your Branch"
+                    : selectedPortal === "ZONAL_HEAD"
+                    ? "Select Your Zone"
+                    : "Select Council Profile"}
+                </span>
+                <span>{displayedAccounts.length} listed</span>
+              </div>
+
               <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden max-h-56 overflow-y-auto">
-                {filteredAccounts.map((acc) => {
-                  const isSelected = selectedAccount?.id === acc.id;
-                  return (
-                    <div
-                      key={acc.id}
-                      onClick={() => handleSelectMinister(acc)}
-                      className={`p-3 text-xs cursor-pointer transition-colors flex items-center justify-between ${
-                        isSelected
-                          ? "bg-[#1B2A6B]/5 border-l-3 border-[#1B2A6B]"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      <div>
-                        <p className={`font-bold ${isSelected ? "text-[#1B2A6B]" : "text-gray-900"}`}>
-                          {acc.branch_name}
-                        </p>
-                        <p className="text-[11px] text-gray-500">
-                          {acc.full_name}
-                        </p>
+                {displayedAccounts.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-gray-400">
+                    No matching accounts found.
+                  </div>
+                ) : (
+                  displayedAccounts.map((acc) => {
+                    const isSelected = selectedAccount?.id === acc.id;
+                    return (
+                      <div
+                        key={acc.id}
+                        onClick={() => handleSelectMinister(acc)}
+                        className={`p-2.5 text-xs cursor-pointer transition-colors flex items-center justify-between ${
+                          isSelected
+                            ? "bg-[#1B2A6B]/5 border-l-3 border-[#1B2A6B]"
+                            : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <div>
+                          {selectedPortal === "ZONAL_HEAD" ? (
+                            <>
+                              <p
+                                className={`font-bold ${
+                                  isSelected ? "text-[#1B2A6B]" : "text-gray-900"
+                                }`}
+                              >
+                                {acc.zone_name}
+                              </p>
+                              <p className="text-[11px] text-gray-500">
+                                {acc.full_name} &bull; {acc.branch_name}
+                              </p>
+                            </>
+                          ) : selectedPortal === "EXECUTIVE" ? (
+                            <>
+                              <p
+                                className={`font-bold ${
+                                  isSelected ? "text-[#1B2A6B]" : "text-gray-900"
+                                }`}
+                              >
+                                {acc.full_name}
+                              </p>
+                              <p className="text-[11px] text-gray-500">
+                                {acc.id === "bishop-isaac-oti-boateng"
+                                  ? "Head of the Executive Council"
+                                  : `Council Member (${acc.zone_name})`}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p
+                                className={`font-bold ${
+                                  isSelected ? "text-[#1B2A6B]" : "text-gray-900"
+                                }`}
+                              >
+                                {acc.branch_name}
+                              </p>
+                              <p className="text-[11px] text-gray-500">
+                                {acc.full_name} &bull; {acc.zone_name}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                        {isSelected && <Check className="w-4 h-4 text-[#1B2A6B]" />}
                       </div>
-                      {isSelected && <Check className="w-4 h-4 text-[#1B2A6B]" />}
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -224,7 +337,10 @@ export function LoginPage() {
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <label className="text-[11px] font-semibold text-gray-700 flex items-center gap-1">
-                      <Lock className="w-3 h-3 text-gray-400" /> Enter Password for {selectedAccount.branch_name}
+                      <Lock className="w-3 h-3 text-gray-400" /> Enter Password for{" "}
+                      {selectedPortal === "ZONAL_HEAD"
+                        ? selectedAccount.zone_name
+                        : selectedAccount.branch_name}
                     </label>
                     <span className="text-[10px] text-gray-400">Default: 1234</span>
                   </div>
@@ -246,7 +362,10 @@ export function LoginPage() {
                   type="submit"
                   className="w-full py-2.5 px-4 bg-[#1B2A6B] text-white text-xs font-semibold rounded hover:bg-[#152152] transition-colors shadow-xs cursor-pointer"
                 >
-                  Log into {selectedAccount.branch_name} Portal
+                  Log into{" "}
+                  {selectedPortal === "ZONAL_HEAD"
+                    ? `${selectedAccount.zone_name} Portal`
+                    : `${selectedAccount.branch_name} Portal`}
                 </button>
               </form>
             )}
@@ -258,7 +377,7 @@ export function LoginPage() {
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2.5 py-2 px-4 border border-gray-200 rounded text-xs font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2.5 py-2 px-4 border border-gray-200 rounded text-xs font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50 cursor-pointer"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
               <path

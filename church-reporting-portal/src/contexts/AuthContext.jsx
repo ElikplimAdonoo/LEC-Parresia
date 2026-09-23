@@ -59,10 +59,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Update profile details (Name, Phone, Branch, Avatar, etc.)
+  // Update profile details (Name, Phone, Branch, Avatar, Password, etc.)
   const updateProfile = (updatedFields) => {
     if (!currentUser) return;
-    const merged = { ...currentUser, ...updatedFields };
+    // Handle password change: store as part of account record
+    const { password, ...rest } = updatedFields;
+    const merged = {
+      ...currentUser,
+      ...rest,
+      ...(password ? { password } : {}),
+    };
     updatePastoralAccount(merged);
     setCurrentUser(merged);
   };

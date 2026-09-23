@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
@@ -124,7 +124,7 @@ export const ProfileSetupPage = () => {
             >
               <option value="BRANCH_PASTOR">Branch Pastor (Submit Branch Reports)</option>
               <option value="ZONAL_HEAD">Zonal Head (Oversee Zone Aggregations)</option>
-              <option value="EXECUTIVE">Executive Council / Daddy (System Analytics)</option>
+              <option value="EXECUTIVE">Executive Council (Bishop Isaac Oti-Boateng)</option>
             </select>
           </div>
 

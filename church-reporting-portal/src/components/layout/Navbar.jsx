@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { Church, LogOut, FileText, LayoutDashboard, Shield, Crown } from "lucide-react";
@@ -17,7 +17,7 @@ export const Navbar = () => {
     { to: "/submit", label: "Submit Report", icon: FileText, role: "BRANCH_PASTOR" },
     { to: "/pastor", label: "Branch Logs", icon: LayoutDashboard, role: "BRANCH_PASTOR" },
     { to: "/zonal", label: "Zonal Oversight", icon: Shield, role: "ZONAL_HEAD" },
-    { to: "/executive", label: "Executive HQ ('Daddy')", icon: Crown, role: "EXECUTIVE" },
+    { to: "/executive", label: "Executive Council", icon: Crown, role: "EXECUTIVE" },
   ];
 
   const getRoleBadge = (role) => {
