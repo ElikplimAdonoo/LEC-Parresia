@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { sendSubmissionReceiptSMS } from "./smsService";
 
 const STORAGE_KEY = "lec_service_reports_store_v3";
 
@@ -92,6 +93,8 @@ export const getStoredReports = async () => {
           first_fruit: raw.first_fruit || r.first_fruit || 0,
           total_stewardship: r.total_finance || raw.total_stewardship || 0,
           total_bus_offering: raw.total_bus_offering || r.bus_offering || 0,
+          currency_totals: raw.currency_totals || r.currency_totals || null,
+          foreign_currencies: raw.foreign_currencies || r.foreign_currencies || [],
 
           // Preacher & Message
           preacher: r.preacher || raw.preacher || "",
@@ -213,6 +216,11 @@ export const saveReport = async (reportData) => {
 
   // Notify all listening dashboards of new data
   notifyReportsUpdated();
+
+  // 1b. Dispatch SMS receipt (background, non-blocking)
+  sendSubmissionReceiptSMS(newReport, reportData.pastor_phone || reportData.phone).catch((e) =>
+    console.error("SMS receipt trigger error:", e)
+  );
 
   // 2. Sync to Supabase so it appears across all devices and URLs (localhost and https)
   try {

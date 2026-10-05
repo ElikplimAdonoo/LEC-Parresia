@@ -164,6 +164,20 @@ export function ZonalDashboard() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-semibold text-[#1B2A6B]">{rep.total_attendance} attendees</p>
+                      <div className="text-[10px] text-gray-500 font-medium space-y-0.5">
+                        <p>GH₵ {Number(rep.total_stewardship || 0).toFixed(2)}</p>
+                        {rep.currency_totals &&
+                          Object.entries(rep.currency_totals)
+                            .filter(([curr, val]) => curr !== "GHS" && Number(val) > 0)
+                            .map(([curr, val]) => (
+                              <span
+                                key={curr}
+                                className="inline-block bg-blue-50 text-[#1B2A6B] font-semibold text-[9px] px-1.5 py-0.5 rounded border border-blue-100 mr-1"
+                              >
+                                {curr} {Number(val).toFixed(2)}
+                              </span>
+                            ))}
+                      </div>
                       <p className="text-[10px] text-emerald-600 flex items-center gap-0.5 justify-end">
                         <CheckCircle2 className="w-2.5 h-2.5" /> Transmitted
                       </p>

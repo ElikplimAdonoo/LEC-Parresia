@@ -9,8 +9,17 @@ import {
   canUndoReport,
   getRemainingUndoTime,
 } from "../lib/reportStore";
-import { CheckCircle2, ArrowRight, AlertCircle, RotateCcw } from "lucide-react";
+import { CheckCircle2, ArrowRight, AlertCircle, RotateCcw, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+// Supported non-GHS currencies
+const CURRENCY_OPTIONS = [
+  { code: "USD", symbol: "$", label: "US Dollar (USD)" },
+  { code: "CAD", symbol: "C$", label: "Canadian Dollar (CAD)" },
+  { code: "EUR", symbol: "€", label: "Euro (EUR)" },
+  { code: "GBP", symbol: "£", label: "British Pound (GBP)" },
+  { code: "NGN", symbol: "₦", label: "Nigerian Naira (NGN)" },
+];
 
 export function ReportFormPage() {
   const { profile } = useAuth();
@@ -23,6 +32,9 @@ export function ReportFormPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [submittedReport, setSubmittedReport] = useState(null);
 
+  // Multi-currency giving blocks (each: { id, currency, offering, tithe, partnership, first_fruit })
+  const [foreignCurrencies, setForeignCurrencies] = useState([]);
+
   const defaultBranch = profile?.branches?.name || "Parresia";
   const defaultPastor = profile?.full_name || "Rev. Makafui Tetteh Kumahlor";
 
@@ -30,7 +42,6 @@ export function ReportFormPage() {
     branch_name: defaultBranch,
     pastor_name: defaultPastor,
     service_date: "",
-    gathering_center: "",
 
     // Attendance
     pastors_count: "",
@@ -134,10 +145,9 @@ export function ReportFormPage() {
     setUndoNotice("");
     if (serviceType === "SUNDAY_MEGA") {
       setForm({
-        branch_name: "Parresia",
-        pastor_name: "Rev. Makafui Tetteh Kumahlor",
+        branch_name: defaultBranch,
+        pastor_name: defaultPastor,
         service_date: new Date().toISOString().split("T")[0],
-        gathering_center: "LC Live Center",
         pastors_count: "2",
         shepherds_count: "14",
         members_count: "110",
@@ -169,10 +179,9 @@ export function ReportFormPage() {
       });
     } else {
       setForm({
-        branch_name: "Parresia",
-        pastor_name: "Rev. Makafui Tetteh Kumahlor",
+        branch_name: defaultBranch,
+        pastor_name: defaultPastor,
         service_date: new Date().toISOString().split("T")[0],
-        gathering_center: "LC Live Center",
         pastors_count: "1",
         shepherds_count: "12",
         members_count: "68",
@@ -184,7 +193,7 @@ export function ReportFormPage() {
         partnership: "400.00",
         first_fruit: "200.00",
         total_bus_offering: "150.00",
-        preacher: "Rev. Makafui Tetteh Kumahlor",
+        preacher: defaultPastor,
         message_title: "TTLHA - Living The Life He Accorded",
         new_members: "3",
         num_bused: "",
@@ -205,6 +214,38 @@ export function ReportFormPage() {
     }
   };
 
+  const handleAddCurrency = (code) => {
+    if (foreignCurrencies.some((c) => c.currency === code)) return;
+    setForeignCurrencies([
+      ...foreignCurrencies,
+      { currency: code, offering: "", tithe: "", partnership: "", first_fruit: "" },
+    ]);
+  };
+
+  const handleRemoveCurrency = (code) => {
+    setForeignCurrencies(foreignCurrencies.filter((c) => c.currency !== code));
+  };
+
+  const handleForeignCurrencyChange = (code, field, val) => {
+    setForeignCurrencies(
+      foreignCurrencies.map((c) => (c.currency === code ? { ...c, [field]: val } : c))
+    );
+  };
+
+  // Compute individual totals for each currency (strictly no conversion)
+  const currencyTallies = {
+    GHS: totalFinance,
+    ...foreignCurrencies.reduce((acc, c) => {
+      const sum =
+        (parseFloat(c.offering) || 0) +
+        (parseFloat(c.tithe) || 0) +
+        (parseFloat(c.partnership) || 0) +
+        (parseFloat(c.first_fruit) || 0);
+      acc[c.currency] = sum;
+      return acc;
+    }, {}),
+  };
+
   const handleChange = (e) => {
     setValidationError("");
     setUndoNotice("");
@@ -219,7 +260,6 @@ export function ReportFormPage() {
         branch_name: undone.branch_name || defaultBranch,
         pastor_name: undone.pastor_name || defaultPastor,
         service_date: undone.service_date || "",
-        gathering_center: undone.gathering_center || "",
         pastors_count: String(undone.pastors_count ?? ""),
         shepherds_count: String(undone.shepherds_count ?? ""),
         members_count: String(undone.members_count ?? ""),
@@ -249,6 +289,10 @@ export function ReportFormPage() {
         spectacular_event: undone.spectacular_event || "",
         unheld_cells_report: undone.unheld_cells_report || "",
       });
+
+      if (undone.foreign_currencies && Array.isArray(undone.foreign_currencies)) {
+        setForeignCurrencies(undone.foreign_currencies);
+      }
 
       setShowSuccessModal(false);
       setSubmittedReport(null);
@@ -290,7 +334,6 @@ export function ReportFormPage() {
     const requiredQuestions = isSunday
       ? [
           { key: "service_date", label: "Date" },
-          { key: "gathering_center", label: "Gathering Center" },
           { key: "branch_name", label: "Name of Branch" },
           { key: "pastor_name", label: "Name of Pastor" },
           { key: "pastors_count", label: "Pastors" },
@@ -320,7 +363,6 @@ export function ReportFormPage() {
         ]
       : [
           { key: "service_date", label: "Date" },
-          { key: "gathering_center", label: "Gathering Center" },
           { key: "branch_name", label: "Name of Branch" },
           { key: "pastor_name", label: "Name of Pastor" },
           { key: "pastors_count", label: "Pastors" },
@@ -373,6 +415,9 @@ export function ReportFormPage() {
         service_type: serviceType,
         total_attendance: totalAttendance,
         total_stewardship: totalFinance,
+        currency_totals: currencyTallies,
+        foreign_currencies: foreignCurrencies,
+        pastor_phone: profile?.phone || "",
         total_souls_won: totalSoulsWon,
         submitted_by_role: profile?.role || "BRANCH_PASTOR",
         zone_name: "Central Zone",
@@ -517,56 +562,33 @@ export function ReportFormPage() {
             {isSunday ? "MEGA GATHERING SERVICE REPORT" : "TTLHA CELL SERVICE"}
           </p>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Date:</label>
-              <input
-                type="date"
-                name="service_date"
-                value={form.service_date}
-                onChange={handleChange}
-                className="w-full border-b border-gray-200 py-1.5 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Gathering Center:</label>
-              <input
-                type="text"
-                name="gathering_center"
-                value={form.gathering_center}
-                onChange={handleChange}
-                placeholder="Enter gathering center"
-                className="w-full border-b border-gray-200 py-1.5 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
-                required
-              />
-            </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Date:</label>
+            <input
+              type="date"
+              name="service_date"
+              value={form.service_date}
+              onChange={handleChange}
+              className="w-full sm:w-1/2 border-b border-gray-200 py-1.5 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+              required
+            />
           </div>
 
+          {/* Locked Read-Only Branch & Pastor */}
           <div className="grid grid-cols-2 gap-4 pt-1">
             <div>
               <label className="block text-xs text-gray-500 mb-1">Name of Branch:</label>
-              <input
-                type="text"
-                name="branch_name"
-                value={form.branch_name}
-                onChange={handleChange}
-                placeholder="Enter name of branch"
-                className="w-full border-b border-gray-200 py-1.5 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
-                required
-              />
+              <div className="w-full border border-gray-200/80 bg-gray-50/70 rounded-md py-1.5 px-2.5 text-xs font-semibold text-gray-800 flex items-center justify-between select-none">
+                <span>{form.branch_name}</span>
+                <span className="text-[10px] text-gray-400 font-normal">Locked</span>
+              </div>
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Name of Pastor:</label>
-              <input
-                type="text"
-                name="pastor_name"
-                value={form.pastor_name}
-                onChange={handleChange}
-                placeholder="Enter name of pastor"
-                className="w-full border-b border-gray-200 py-1.5 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
-                required
-              />
+              <div className="w-full border border-gray-200/80 bg-gray-50/70 rounded-md py-1.5 px-2.5 text-xs font-semibold text-gray-800 flex items-center justify-between select-none">
+                <span className="truncate">{form.pastor_name}</span>
+                <span className="text-[10px] text-gray-400 font-normal shrink-0">Locked</span>
+              </div>
             </div>
           </div>
         </div>
@@ -717,92 +739,265 @@ export function ReportFormPage() {
           </div>
         )}
 
-        {/* SECTION 4: FINANCE (Numbers: 2 on a line - No asterisks, all required) */}
-        <div className="space-y-3.5 pt-2 border-t border-gray-100">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-[#1B2A6B]">
-            FINANCE
-          </p>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Offering - GHC</label>
-              <input
-                type="number"
-                step="0.01"
-                name="offering"
-                value={form.offering}
-                onChange={handleChange}
-                placeholder="0.00"
-                className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Tithe - GHC</label>
-              <input
-                type="number"
-                step="0.01"
-                name="tithe"
-                value={form.tithe}
-                onChange={handleChange}
-                placeholder="0.00"
-                className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
-                required
-              />
-            </div>
+        {/* SECTION 4: FINANCE (Multi-currency with independent tallies, no conversion) */}
+        <div className="space-y-4 pt-2 border-t border-gray-100">
+          <div className="flex justify-between items-center">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#1B2A6B]">
+              FINANCE
+            </p>
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
+              Default: Ghana Cedi (GHS)
+            </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 pt-1">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Partnership - GHC</label>
-              <input
-                type="number"
-                step="0.01"
-                name="partnership"
-                value={form.partnership}
-                onChange={handleChange}
-                placeholder="0.00"
-                className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
-                required
-              />
+          {/* Primary GHS Giving */}
+          <div className="bg-gray-50/50 p-3 rounded-lg border border-gray-100 space-y-3">
+            <div className="flex justify-between items-center border-b border-gray-200/60 pb-1.5">
+              <span className="text-xs font-bold text-gray-800">
+                Ghana Cedi (GH₵ / GHS)
+              </span>
+              <span className="text-xs font-semibold text-[#1B2A6B]">
+                Subtotal: GH₵ {totalFinance.toFixed(2)}
+              </span>
             </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">First Fruit - GHC</label>
-              <input
-                type="number"
-                step="0.01"
-                name="first_fruit"
-                value={form.first_fruit}
-                onChange={handleChange}
-                placeholder="0.00"
-                className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
-                required
-              />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Offering - GHC</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="offering"
+                  value={form.offering}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Tithe - GHC</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="tithe"
+                  value={form.tithe}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                  required
+                />
+              </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-1">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Partnership - GHC</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="partnership"
+                  value={form.partnership}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">First Fruit - GHC</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="first_fruit"
+                  value={form.first_fruit}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* TOTAL BUS OFFERING (TTLHA Midweek) */}
+            {!isSunday && (
+              <div className="pt-1 max-w-sm">
+                <label className="block text-xs text-gray-500 mb-1">Total Bus Offering - GHC</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="total_bus_offering"
+                  value={form.total_bus_offering}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                  required
+                />
+              </div>
+            )}
           </div>
 
-          {/* TOTAL BUS OFFERING (TTLHA Midweek) */}
-          {!isSunday && (
-            <div className="pt-1 max-w-sm">
-              <label className="block text-xs text-gray-500 mb-1">Total Bus Offering - GHC</label>
-              <input
-                type="number"
-                step="0.01"
-                name="total_bus_offering"
-                value={form.total_bus_offering}
-                onChange={handleChange}
-                placeholder="0.00"
-                className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
-                required
-              />
+          {/* Dynamic Additional Currency Cards */}
+          {foreignCurrencies.map((fc) => {
+            const config = CURRENCY_OPTIONS.find((c) => c.code === fc.currency) || {
+              label: fc.currency,
+              symbol: "",
+              code: fc.currency,
+            };
+            const fcSubtotal =
+              (parseFloat(fc.offering) || 0) +
+              (parseFloat(fc.tithe) || 0) +
+              (parseFloat(fc.partnership) || 0) +
+              (parseFloat(fc.first_fruit) || 0);
+
+            return (
+              <div
+                key={fc.currency}
+                className="bg-blue-50/40 p-3 rounded-lg border border-blue-100 space-y-3"
+              >
+                <div className="flex justify-between items-center border-b border-blue-200/50 pb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-[#1B2A6B]">
+                      {config.label} ({config.symbol})
+                    </span>
+                    <span className="text-[10px] bg-blue-100 text-[#1B2A6B] px-1.5 py-0.5 rounded font-medium">
+                      Separate Tally
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-[#1B2A6B]">
+                      Subtotal: {config.symbol} {fcSubtotal.toFixed(2)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCurrency(fc.currency)}
+                      className="text-gray-400 hover:text-red-600 transition-colors p-0.5 cursor-pointer"
+                      title="Remove this currency"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Offering - {config.code} ({config.symbol})
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={fc.offering}
+                      onChange={(e) =>
+                        handleForeignCurrencyChange(fc.currency, "offering", e.target.value)
+                      }
+                      placeholder="0.00"
+                      className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Tithe - {config.code} ({config.symbol})
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={fc.tithe}
+                      onChange={(e) =>
+                        handleForeignCurrencyChange(fc.currency, "tithe", e.target.value)
+                      }
+                      placeholder="0.00"
+                      className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-1">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Partnership - {config.code} ({config.symbol})
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={fc.partnership}
+                      onChange={(e) =>
+                        handleForeignCurrencyChange(fc.currency, "partnership", e.target.value)
+                      }
+                      placeholder="0.00"
+                      className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      First Fruit - {config.code} ({config.symbol})
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={fc.first_fruit}
+                      onChange={(e) =>
+                        handleForeignCurrencyChange(fc.currency, "first_fruit", e.target.value)
+                      }
+                      placeholder="0.00"
+                      className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Add Another Currency Button */}
+          {CURRENCY_OPTIONS.some((opt) => !foreignCurrencies.some((fc) => fc.currency === opt.code)) && (
+            <div className="pt-1">
+              <p className="text-[10px] text-gray-400 font-medium mb-1.5 uppercase tracking-wider">
+                + Add Giving in Another Currency:
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {CURRENCY_OPTIONS.filter(
+                  (opt) => !foreignCurrencies.some((fc) => fc.currency === opt.code)
+                ).map((opt) => (
+                  <button
+                    key={opt.code}
+                    type="button"
+                    onClick={() => handleAddCurrency(opt.code)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1B2A6B] bg-[#1B2A6B]/5 hover:bg-[#1B2A6B]/10 px-2.5 py-1 rounded-md border border-[#1B2A6B]/20 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    {opt.code} ({opt.symbol})
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Total at bottom right */}
-          <div className="flex justify-end pt-1">
-            <span className="text-xs font-semibold text-gray-600">
-              Total: GHC <span className="text-sm font-extrabold text-[#1B2A6B]">{totalFinance.toFixed(2)}</span>
-            </span>
+          {/* Grand Totals Summary (Tallied in Respective Currencies - No Conversion) */}
+          <div className="pt-2 border-t border-gray-200/80 space-y-1 text-right">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              Financial Stewardship Totals (Tallied Separately)
+            </p>
+            <div className="flex flex-wrap justify-end gap-2 pt-0.5">
+              <span className="inline-flex items-center px-2 py-1 rounded bg-[#1B2A6B]/5 text-xs font-bold text-[#1B2A6B] border border-[#1B2A6B]/20">
+                GHS: GH₵ {totalFinance.toFixed(2)}
+              </span>
+              {foreignCurrencies.map((fc) => {
+                const config = CURRENCY_OPTIONS.find((c) => c.code === fc.currency);
+                const sub =
+                  (parseFloat(fc.offering) || 0) +
+                  (parseFloat(fc.tithe) || 0) +
+                  (parseFloat(fc.partnership) || 0) +
+                  (parseFloat(fc.first_fruit) || 0);
+                return (
+                  <span
+                    key={fc.currency}
+                    className="inline-flex items-center px-2 py-1 rounded bg-blue-50 text-xs font-bold text-[#1B2A6B] border border-blue-200"
+                  >
+                    {fc.currency}: {config?.symbol || ""} {sub.toFixed(2)}
+                  </span>
+                );
+              })}
+            </div>
           </div>
         </div>
 
