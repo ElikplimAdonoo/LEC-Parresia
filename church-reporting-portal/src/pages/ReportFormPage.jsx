@@ -50,12 +50,15 @@ export function ReportFormPage() {
     first_timers_count: "",
     children_count: "",
     teens_count: "",
+    guests_count: "",
+    online_count: "",
 
     // Finance (GHC)
     offering: "",
     tithe: "",
     partnership: "",
     first_fruit: "",
+    seeds: "",
     total_bus_offering: "", // TTLHA
 
     // Preacher & Message (Text)
@@ -121,7 +124,7 @@ export function ReportFormPage() {
   const remainingTimeStr = existingReport ? getRemainingUndoTime(existingReport) : null;
 
   // Dynamic calculations
-  const totalAttendance =
+  const inPersonAttendance =
     (parseInt(form.pastors_count) || 0) +
     (parseInt(form.shepherds_count) || 0) +
     (parseInt(form.members_count) || 0) +
@@ -129,11 +132,17 @@ export function ReportFormPage() {
     (parseInt(form.children_count) || 0) +
     (parseInt(form.teens_count) || 0);
 
+  const totalAttendance =
+    inPersonAttendance +
+    (parseInt(form.guests_count) || 0) +
+    (parseInt(form.online_count) || 0);
+
   const totalFinance =
     (parseFloat(form.offering) || 0) +
     (parseFloat(form.tithe) || 0) +
     (parseFloat(form.partnership) || 0) +
-    (parseFloat(form.first_fruit) || 0);
+    (parseFloat(form.first_fruit) || 0) +
+    (parseFloat(form.seeds) || 0);
 
   const totalSoulsWon =
     (parseInt(form.altar_call) || 0) +
@@ -154,10 +163,13 @@ export function ReportFormPage() {
         first_timers_count: "12",
         children_count: "26",
         teens_count: "20",
+        guests_count: "8",
+        online_count: "35",
         offering: "1450.00",
         tithe: "2500.00",
         partnership: "800.00",
         first_fruit: "500.00",
+        seeds: "300.00",
         total_bus_offering: "",
         preacher: "Bishop Isaac Oti-Boateng",
         message_title: "The Parresia of Faith",
@@ -188,10 +200,13 @@ export function ReportFormPage() {
         first_timers_count: "5",
         children_count: "14",
         teens_count: "10",
+        guests_count: "2",
+        online_count: "12",
         offering: "620.00",
         tithe: "950.00",
         partnership: "400.00",
         first_fruit: "200.00",
+        seeds: "100.00",
         total_bus_offering: "150.00",
         preacher: defaultPastor,
         message_title: "TTLHA - Living The Life He Accorded",
@@ -218,7 +233,7 @@ export function ReportFormPage() {
     if (foreignCurrencies.some((c) => c.currency === code)) return;
     setForeignCurrencies([
       ...foreignCurrencies,
-      { currency: code, offering: "", tithe: "", partnership: "", first_fruit: "" },
+      { currency: code, offering: "", tithe: "", partnership: "", first_fruit: "", seeds: "" },
     ]);
   };
 
@@ -240,7 +255,8 @@ export function ReportFormPage() {
         (parseFloat(c.offering) || 0) +
         (parseFloat(c.tithe) || 0) +
         (parseFloat(c.partnership) || 0) +
-        (parseFloat(c.first_fruit) || 0);
+        (parseFloat(c.first_fruit) || 0) +
+        (parseFloat(c.seeds) || 0);
       acc[c.currency] = sum;
       return acc;
     }, {}),
@@ -266,10 +282,13 @@ export function ReportFormPage() {
         first_timers_count: String(undone.first_timers_count ?? ""),
         children_count: String(undone.children_count ?? ""),
         teens_count: String(undone.teens_count ?? ""),
+        guests_count: String(undone.guests_count ?? ""),
+        online_count: String(undone.online_count ?? ""),
         offering: String(undone.offering ?? ""),
         tithe: String(undone.tithe ?? ""),
         partnership: String(undone.partnership ?? ""),
         first_fruit: String(undone.first_fruit ?? ""),
+        seeds: String(undone.seeds ?? ""),
         total_bus_offering: String(undone.total_bus_offering ?? ""),
         preacher: undone.preacher || "",
         message_title: undone.message_title || "",
@@ -342,10 +361,13 @@ export function ReportFormPage() {
           { key: "first_timers_count", label: "First Timers" },
           { key: "children_count", label: "Children" },
           { key: "teens_count", label: "Teens" },
+          { key: "guests_count", label: "Guests" },
+          { key: "online_count", label: "Online" },
           { key: "offering", label: "Offering" },
           { key: "tithe", label: "Tithe" },
           { key: "partnership", label: "Partnership" },
-          { key: "first_fruit", label: "First Fruit" },
+          { key: "first_fruit", label: "First Fruits" },
+          { key: "seeds", label: "Seeds" },
           { key: "preacher", label: "Preacher" },
           { key: "message_title", label: "Message Title" },
           { key: "new_members", label: "Number of New Members" },
@@ -371,13 +393,16 @@ export function ReportFormPage() {
           { key: "first_timers_count", label: "First Timers" },
           { key: "children_count", label: "Children" },
           { key: "teens_count", label: "Teens" },
+          { key: "guests_count", label: "Guests" },
+          { key: "online_count", label: "Online" },
           { key: "num_cells_in_branch", label: "Number of Cells in Branch" },
           { key: "cell_meetings_held", label: "Cell Meetings Held" },
           { key: "cell_meetings_not_held", label: "Cell Meetings Not Held" },
           { key: "offering", label: "Offering" },
           { key: "tithe", label: "Tithe" },
           { key: "partnership", label: "Partnership" },
-          { key: "first_fruit", label: "First Fruit" },
+          { key: "first_fruit", label: "First Fruits" },
+          { key: "seeds", label: "Seeds" },
           { key: "total_bus_offering", label: "Total Bus Offering" },
           { key: "preacher", label: "Preacher" },
           { key: "message_title", label: "Message Title" },
@@ -413,6 +438,7 @@ export function ReportFormPage() {
       const saved = await saveReport({
         ...form,
         service_type: serviceType,
+        in_person_attendance: inPersonAttendance,
         total_attendance: totalAttendance,
         total_stewardship: totalFinance,
         currency_totals: currencyTallies,
@@ -574,20 +600,18 @@ export function ReportFormPage() {
             />
           </div>
 
-          {/* Locked Read-Only Branch & Pastor */}
+          {/* Read-Only Branch & Pastor */}
           <div className="grid grid-cols-2 gap-4 pt-1">
             <div>
               <label className="block text-xs text-gray-500 mb-1">Name of Branch:</label>
-              <div className="w-full border border-gray-200/80 bg-gray-50/70 rounded-md py-1.5 px-2.5 text-xs font-semibold text-gray-800 flex items-center justify-between select-none">
-                <span>{form.branch_name}</span>
-                <span className="text-[10px] text-gray-400 font-normal">Locked</span>
+              <div className="w-full border border-gray-200/80 bg-gray-50/70 rounded-md py-1.5 px-2.5 text-xs font-semibold text-gray-800 select-none">
+                {form.branch_name}
               </div>
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Name of Pastor:</label>
-              <div className="w-full border border-gray-200/80 bg-gray-50/70 rounded-md py-1.5 px-2.5 text-xs font-semibold text-gray-800 flex items-center justify-between select-none">
+              <div className="w-full border border-gray-200/80 bg-gray-50/70 rounded-md py-1.5 px-2.5 text-xs font-semibold text-gray-800 select-none">
                 <span className="truncate">{form.pastor_name}</span>
-                <span className="text-[10px] text-gray-400 font-normal shrink-0">Locked</span>
               </div>
             </div>
           </div>
@@ -677,9 +701,40 @@ export function ReportFormPage() {
             </div>
           </div>
 
-          {/* Total at bottom right */}
-          <div className="flex justify-end pt-1">
-            <span className="text-xs font-semibold text-gray-600">
+          <div className="grid grid-cols-2 gap-4 pt-1">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Guests -</label>
+              <input
+                type="number"
+                name="guests_count"
+                value={form.guests_count}
+                onChange={handleChange}
+                placeholder="0"
+                className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Online -</label>
+              <input
+                type="number"
+                name="online_count"
+                value={form.online_count}
+                onChange={handleChange}
+                placeholder="0"
+                className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Dual Attendance Totals at bottom right */}
+          <div className="flex flex-col items-end pt-1 space-y-0.5">
+            <span className="text-xs text-gray-500">
+              Total (excl. Guests &amp; Online):{" "}
+              <span className="font-bold text-gray-800">{inPersonAttendance}</span>
+            </span>
+            <span className="text-xs font-semibold text-gray-700">
               {isSunday ? "Total Attendance: " : "Total Cell Attendance: "}
               <span className="text-sm font-extrabold text-[#1B2A6B]">{totalAttendance}</span>
             </span>
@@ -745,19 +800,13 @@ export function ReportFormPage() {
             <p className="text-[11px] font-bold uppercase tracking-widest text-[#1B2A6B]">
               FINANCE
             </p>
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
-              Default: Ghana Cedi (GHS)
-            </span>
           </div>
 
           {/* Primary GHS Giving */}
           <div className="bg-gray-50/50 p-3 rounded-lg border border-gray-100 space-y-3">
-            <div className="flex justify-between items-center border-b border-gray-200/60 pb-1.5">
+            <div className="border-b border-gray-200/60 pb-1.5">
               <span className="text-xs font-bold text-gray-800">
                 Ghana Cedi (GH₵ / GHS)
-              </span>
-              <span className="text-xs font-semibold text-[#1B2A6B]">
-                Subtotal: GH₵ {totalFinance.toFixed(2)}
               </span>
             </div>
 
@@ -805,7 +854,7 @@ export function ReportFormPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">First Fruit - GHC</label>
+                <label className="block text-xs text-gray-500 mb-1">First Fruits - GHC</label>
                 <input
                   type="number"
                   step="0.01"
@@ -817,6 +866,23 @@ export function ReportFormPage() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-1">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Seeds - GHC</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="seeds"
+                  value={form.seeds}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                  required
+                />
+              </div>
+              <div />
             </div>
 
             {/* TOTAL BUS OFFERING (TTLHA Midweek) */}
@@ -835,6 +901,13 @@ export function ReportFormPage() {
                 />
               </div>
             )}
+
+            {/* GHS Subtotal — bottom right */}
+            <div className="flex justify-end pt-1">
+              <span className="text-xs font-semibold text-[#1B2A6B]">
+                Subtotal: GH₵ {totalFinance.toFixed(2)}
+              </span>
+            </div>
           </div>
 
           {/* Dynamic Additional Currency Cards */}
@@ -848,7 +921,8 @@ export function ReportFormPage() {
               (parseFloat(fc.offering) || 0) +
               (parseFloat(fc.tithe) || 0) +
               (parseFloat(fc.partnership) || 0) +
-              (parseFloat(fc.first_fruit) || 0);
+              (parseFloat(fc.first_fruit) || 0) +
+              (parseFloat(fc.seeds) || 0);
 
             return (
               <div
@@ -856,27 +930,17 @@ export function ReportFormPage() {
                 className="bg-blue-50/40 p-3 rounded-lg border border-blue-100 space-y-3"
               >
                 <div className="flex justify-between items-center border-b border-blue-200/50 pb-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-[#1B2A6B]">
-                      {config.label} ({config.symbol})
-                    </span>
-                    <span className="text-[10px] bg-blue-100 text-[#1B2A6B] px-1.5 py-0.5 rounded font-medium">
-                      Separate Tally
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold text-[#1B2A6B]">
-                      Subtotal: {config.symbol} {fcSubtotal.toFixed(2)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveCurrency(fc.currency)}
-                      className="text-gray-400 hover:text-red-600 transition-colors p-0.5 cursor-pointer"
-                      title="Remove this currency"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  <span className="text-xs font-bold text-[#1B2A6B]">
+                    {config.label} ({config.symbol})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveCurrency(fc.currency)}
+                    className="text-gray-400 hover:text-red-600 transition-colors p-0.5 cursor-pointer"
+                    title="Remove this currency"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -930,7 +994,7 @@ export function ReportFormPage() {
                   </div>
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">
-                      First Fruit - {config.code} ({config.symbol})
+                      First Fruits - {config.code} ({config.symbol})
                     </label>
                     <input
                       type="number"
@@ -943,6 +1007,32 @@ export function ReportFormPage() {
                       className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
                     />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-1">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Seeds - {config.code} ({config.symbol})
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={fc.seeds}
+                      onChange={(e) =>
+                        handleForeignCurrencyChange(fc.currency, "seeds", e.target.value)
+                      }
+                      placeholder="0.00"
+                      className="w-full border-b border-gray-200 py-1 text-xs text-gray-900 outline-none focus:border-[#1B2A6B] bg-transparent"
+                    />
+                  </div>
+                  <div />
+                </div>
+
+                {/* Foreign currency subtotal — bottom right */}
+                <div className="flex justify-end pt-1">
+                  <span className="text-xs font-semibold text-[#1B2A6B]">
+                    Subtotal: {config.symbol} {fcSubtotal.toFixed(2)}
+                  </span>
                 </div>
               </div>
             );
@@ -987,7 +1077,8 @@ export function ReportFormPage() {
                   (parseFloat(fc.offering) || 0) +
                   (parseFloat(fc.tithe) || 0) +
                   (parseFloat(fc.partnership) || 0) +
-                  (parseFloat(fc.first_fruit) || 0);
+                  (parseFloat(fc.first_fruit) || 0) +
+                  (parseFloat(fc.seeds) || 0);
                 return (
                   <span
                     key={fc.currency}
